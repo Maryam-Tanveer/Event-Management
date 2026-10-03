@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Save, Eye, Rocket, ArrowLeft } from "lucide-react";
@@ -57,7 +57,7 @@ function OrganizePage() {
         });
       } else {
         // Direct URL navigation — API se fetch karo
-        axios.get(`/api/events/${eventId}`)
+        axiosInstance.get(`/api/events/${eventId}`)
           .then(({ data }) => {
             setEventData({
               title: data.title || "",
@@ -187,11 +187,11 @@ function OrganizePage() {
 
       if (isEditMode) {
         // ✅ Edit mode — PUT request
-        await axios.put(`/api/events/${eventId}`, payload);
+        await axiosInstance.put(`/api/events/${eventId}`, payload);
         toast.success("Event updated successfully!", { id: "publish-toast" });
       } else {
         // ✅ Create mode — POST request
-        await axios.post("/api/events", payload);
+        await axiosInstance.post("/api/events", payload);
         localStorage.removeItem(DRAFT_KEY); // draft clear karo
         toast.success("Event published successfully!", { id: "publish-toast" });
       }

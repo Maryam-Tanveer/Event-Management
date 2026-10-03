@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { useLocation, useNavigate } from "react-router-dom";
 import { mockEvents } from "../data/mockEvents";
 import EventGallery from "../Components/tickets/EventGallery";
@@ -32,7 +32,7 @@ const TicketPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const { data } = await axios.get(`/api/events/${eventId}`);
+        const { data } = await axiosInstance.get(`/api/events/${eventId}`);
 
         // Backend ka structure frontend components ke liye map karo
         const mappedEvent = {

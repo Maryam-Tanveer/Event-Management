@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../../api/axiosInstance";
 import toast from "react-hot-toast";
 import { Tag } from "lucide-react";
 
@@ -24,7 +24,7 @@ function PromoCodeInput({ onApply }) {
 
     try {
       // Backend se validate karo — codes client pe nahi hain
-      const { data } = await axios.post("/api/promo/validate", { code: trimmed });
+      const { data } = await axiosInstance.post("/api/promo/validate", { code: trimmed });
 
       if (data.valid) {
         setApplied(true);

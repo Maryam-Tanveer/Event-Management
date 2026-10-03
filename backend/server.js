@@ -46,10 +46,13 @@ app.use(helmet());
 // Agar FRONTEND_URL .env mein set nahi hai toh localhost:3000 fallback use hoga
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:3000",
+  "https://event-management-k439.vercel.app", // Live frontend
   "http://127.0.0.1:3000",
+  "http://localhost:3000",
   "http://localhost:5173", // Vite default
   "http://127.0.0.1:5173"
 ];
+
 
 app.use(
   cors({

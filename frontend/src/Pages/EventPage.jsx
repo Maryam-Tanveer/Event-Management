@@ -4,7 +4,7 @@ import Sidebar from "../Components/events/Sidebar";
 import EventsHeader from "../Components/events/EventsHeader";
 import EventsGrid from "../Components/events/EventsGrid";
 import { mockEvents } from "../data/mockEvents";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 
 const PRICE_MAP = {
   free:     { priceMin: 0, priceMax: 0 },
@@ -74,7 +74,7 @@ function EventPage() {
         ...priceParams,
       };
 
-      const { data } = await axios.get("/api/events", { params });
+      const { data } = await axiosInstance.get("/api/events", { params });
 
       if (data.totalCount === 0 && currentPage === 1) {
         setEvents(getFilteredMockEvents());

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import ProfileBanner from "../Components/dashboard/ProfileBanner";
@@ -31,7 +31,7 @@ function MyEventsPage() {
   useEffect(() => {
     const fetchMyTickets = async () => {
       try {
-        const { data } = await axios.get("/api/tickets/mine");
+        const { data } = await axiosInstance.get("/api/tickets/mine");
         const mappedTickets = data.map((t) => ({
           id: t._id,
           ticketId: `TK-${String(t._id).slice(-5).toUpperCase()}`,
@@ -57,7 +57,7 @@ function MyEventsPage() {
     if (user?.role !== "organizer") return;
     setEventsLoading(true);
     try {
-      const { data } = await axios.get("/api/events/mine/all");
+      const { data } = await axiosInstance.get("/api/events/mine/all");
       setMyEvents(data);
     } catch (error) {
       console.error("Failed to fetch my events", error);
@@ -78,7 +78,7 @@ function MyEventsPage() {
     if (!confirmed) return;
 
     try {
-      await axios.delete(`/api/events/${eventId}`);
+      await axiosInstance.delete(`/api/events/${eventId}`);
       toast.success("Event deleted successfully.");
       setMyEvents((prev) => prev.filter((e) => e._id !== eventId));
     } catch (err) {

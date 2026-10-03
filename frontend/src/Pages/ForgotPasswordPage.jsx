@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 
 function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -23,7 +23,7 @@ function ForgotPasswordPage() {
     try {
       // ❌ Pehle tha: setTimeout fake success — email kabhi nahi jaata tha
       // ✅ Ab: real backend call — token generate hota hai, email jaata hai
-      await axios.post("/api/auth/forgot-password", { email });
+      await axiosInstance.post("/api/auth/forgot-password", { email });
       setSent(true);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong. Please try again.");

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import axios from "axios";
+import axiosInstance from "../../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
@@ -137,7 +137,7 @@ function TicketSidebar({ event }) {
   const handleFreeTicket = async () => {
     try {
       toast.loading("Registering...", { id: "free-ticket-toast" });
-      await axios.post("/api/tickets/free", {
+      await axiosInstance.post("/api/tickets/free", {
         eventId: event.id,
         ticketType: selectedTicket.label,
         quantity,
@@ -154,7 +154,7 @@ function TicketSidebar({ event }) {
     try {
       // totalAmount backend calculate karega (event.price × quantity)
       // Promo code bhi backend validate karega (FIX #9)
-      await axios.post("/api/tickets", {
+      await axiosInstance.post("/api/tickets", {
         eventId: event.id,
         ticketType: selectedTicket.label,
         quantity,

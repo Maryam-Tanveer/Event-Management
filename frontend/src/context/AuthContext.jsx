@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 
 const AuthContext = createContext();
 
@@ -12,33 +12,27 @@ export function AuthProvider({ children }) {
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
-      if (parsedUser.token) {
-        axios.defaults.headers.common["Authorization"] = `Bearer ${parsedUser.token}`;
-      }
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    const res = await axios.post("/api/auth/login", { email, password });
+    const res = await axiosInstance.post("/api/auth/login", { email, password });
     const userData = res.data;
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
-    axios.defaults.headers.common["Authorization"] = `Bearer ${userData.token}`;
   };
 
   const registerUser = async (name, email, password, role) => {
-    const res = await axios.post("/api/auth/register", { name, email, password, role });
+    const res = await axiosInstance.post("/api/auth/register", { name, email, password, role });
     const userData = res.data;
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
-    axios.defaults.headers.common["Authorization"] = `Bearer ${userData.token}`;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
-    delete axios.defaults.headers.common["Authorization"];
   };
 
   // Profile update ke baad local user state + localStorage sync karo
