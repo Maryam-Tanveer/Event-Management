@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import AgendaItem from "./AgendaItem";
 
 // ✅ Ab agendaSlots event se prop ke zariye aate hain — hardcoded nahi

@@ -63,7 +63,6 @@ function MyEventsPage() {
         setTickets(mappedTickets);
 
         // ✅ Schedule — real tickets se derive karo (aane wali events)
-        const today = new Date();
         const upcoming = data
           .filter((t) => t.event?.startDate)
           .sort((a, b) => new Date(a.event.startDate) - new Date(b.event.startDate))
