@@ -13,6 +13,8 @@ const ticketRoutes = require("./routes/ticketRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const promoRoutes = require("./routes/promoRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const statsRoutes  = require("./routes/statsRoutes");
 
 connectDB();
 
@@ -118,7 +120,9 @@ app.use("/api/events", generalLimiter, eventRoutes);
 app.use("/api/tickets", generalLimiter, ticketRoutes);
 app.use("/api/upload", generalLimiter, uploadRoutes);
 app.use("/api/payment", generalLimiter, paymentRoutes);
-app.use("/api/promo", generalLimiter, promoRoutes);
+app.use("/api/promo",    generalLimiter, promoRoutes);
+app.use("/api/reviews",  generalLimiter, reviewRoutes);
+app.use("/api/stats",    generalLimiter, statsRoutes);
 
 // ─── 7. Global Error Handler ─────────────────────────────────────────────────
 // Koi bhi unhandled error yahan aayega — stack trace leak nahi hogi production mein

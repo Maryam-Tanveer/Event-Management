@@ -179,10 +179,14 @@ function OrganizePage() {
         previewImage: eventData.previewImage,
         selectedTier: eventData.selectedTier,
         tierDetails: eventData.tierDetails,
-        agenda: eventData.agenda,
         promoVideo: eventData.promoVideo,
         privacy: eventData.privacy,
         galleryImages: eventData.galleryImages || [],
+        // ✅ New dynamic fields
+        agendaSlots: eventData.agendaSlots || [],
+        guests:      eventData.guests      || [],
+        amenities:   eventData.amenities   || [],
+        maxTickets:  eventData.maxTickets  || null,
       };
 
       if (isEditMode) {

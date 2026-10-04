@@ -74,30 +74,37 @@ function DestinationSection({ eventData, setEventData }) {
         </div>
       </div>
 
-      {/* Map placeholder */}
+      {/* ✅ Dynamic map — real venue + address se */}
       <div className="w-full h-48 rounded-xl overflow-hidden bg-[#e8e0d8] mb-3 relative">
-        <img
-          src="https://api.mapbox.com/styles/v1/mapbox/light-v11/static/12.3326,45.4371,14,0/600x250@2x?access_token=pk.placeholder"
-          alt="Venue Map"
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.target.style.display = "none";
-            e.target.parentNode.innerHTML =
-              '<div class="w-full h-full flex items-center justify-center bg-[#e8e0d8]"><p class="text-sm text-[#a09080]">📍 Map — Palazzo Pisani Moretta, Venice</p></div>';
-          }}
-        />
-        {/* Map overlay label */}
-        <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 flex items-center gap-2 shadow-sm">
-          <MapPin size={14} className="text-[#b8862f]" />
-          <div>
-            <p className="text-xs font-semibold text-[#3d2a2a]">
-              Grand Canal Waterfront Dock
-            </p>
-            <p className="text-[10px] text-[#a09080]">
-              Private Water Taxi Coordinates Confirmed
-            </p>
+        {eventData.venue ? (
+          <iframe
+            title="Venue Map Preview"
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            style={{ border: 0 }}
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(
+              `${eventData.venue} ${eventData.address || ""}`
+            )}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+            allowFullScreen
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <p className="text-sm text-[#a09080]">📍 Enter a venue to see the map</p>
           </div>
-        </div>
+        )}
+        {/* Dynamic overlay label */}
+        {eventData.venue && (
+          <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 flex items-center gap-2 shadow-sm">
+            <MapPin size={14} className="text-[#b8862f]" />
+            <div>
+              <p className="text-xs font-semibold text-[#3d2a2a]">{eventData.venue}</p>
+              {eventData.address && (
+                <p className="text-[10px] text-[#a09080]">{eventData.address}</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Streaming URL */}

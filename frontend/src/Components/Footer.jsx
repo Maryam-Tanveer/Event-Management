@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function Footer() {
   const [email, setEmail] = useState("");
@@ -9,7 +10,7 @@ function Footer() {
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (email.trim()) {
-      alert(`Thanks for subscribing with: ${email}`);
+      toast.success(`You're on the list! We'll be in touch at ${email}.`);
       setEmail("");
     }
   };
@@ -37,7 +38,7 @@ function Footer() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => navigate(`/?category=${encodeURIComponent(cat)}`)}
+                  onClick={() => navigate("/events", { state: { category: cat } })}
                   className="px-4 py-1.5 text-xs font-medium rounded-full border border-[#d4a853]/50 text-[#d4a853] hover:bg-[#d4a853] hover:text-[#3d1823] transition-all duration-200"
                 >
                   {cat}
@@ -81,26 +82,26 @@ function Footer() {
               <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">Explore</p>
               <ul className="space-y-3 text-sm text-[#3d2a2a]">
                 <li><Link to="/" className="hover:text-[#b8862f] transition-colors">Discovery</Link></li>
-                <li><Link to="/tickets" className="hover:text-[#b8862f] transition-colors">Tickets</Link></li>
-                <li><Link to="/my-events" className="hover:text-[#b8862f] transition-colors">My tickets</Link></li>
+                <li><Link to="/events" className="hover:text-[#b8862f] transition-colors">Browse Events</Link></li>
+                <li><Link to="/my-events" className="hover:text-[#b8862f] transition-colors">My Tickets</Link></li>
               </ul>
             </div>
 
             <div>
               <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">Company</p>
               <ul className="space-y-3 text-sm text-[#3d2a2a]">
-                <li><Link to="/" className="hover:text-[#b8862f] transition-colors">About</Link></li>
-                <li><Link to="/" className="hover:text-[#b8862f] transition-colors">Careers</Link></li>
-                <li><Link to="/" className="hover:text-[#b8862f] transition-colors">Press</Link></li>
+                <li><a href="#about" className="hover:text-[#b8862f] transition-colors">About Us</a></li>
+                <li><a href="mailto:careers@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Careers</a></li>
+                <li><a href="mailto:press@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Press</a></li>
               </ul>
             </div>
 
             <div>
               <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">Support</p>
               <ul className="space-y-3 text-sm text-[#3d2a2a]">
-                <li><Link to="/" className="hover:text-[#b8862f] transition-colors">Contact</Link></li>
-                <li><Link to="/" className="hover:text-[#b8862f] transition-colors">FAQs</Link></li>
-                <li><Link to="/" className="hover:text-[#b8862f] transition-colors">Refund policy</Link></li>
+                <li><a href="mailto:support@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Contact Us</a></li>
+                <li><a href="#faq" className="hover:text-[#b8862f] transition-colors">FAQs</a></li>
+                <li><a href="mailto:support@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Refund Policy</a></li>
               </ul>
             </div>
 
@@ -113,8 +114,8 @@ function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a href="tel:+923000000000" className="hover:text-[#b8862f] transition-colors">
-                    +92 300 0000000
+                  <a href="tel:+923001234567" className="hover:text-[#b8862f] transition-colors">
+                    +92 300 1234567
                   </a>
                 </li>
               </ul>
@@ -136,9 +137,9 @@ function Footer() {
           </div>
 
           <div className="flex gap-3 items-center">
-            <Link to="/" className="hover:text-[#3d2a2a] transition-colors">Privacy policy</Link>
+            <a href="#privacy" className="hover:text-[#3d2a2a] transition-colors">Privacy Policy</a>
             <span className="opacity-40">·</span>
-            <Link to="/" className="hover:text-[#3d2a2a] transition-colors">Terms of service</Link>
+            <a href="#terms" className="hover:text-[#3d2a2a] transition-colors">Terms of Service</a>
           </div>
 
         </div>

@@ -12,47 +12,100 @@ import OrganizerEvents from "../Components/dashboard/OrganizerEvents";
 import EditProfileModal from "../Components/dashboard/EditProfileModal";
 import PaymentMethodsModal from "../Components/dashboard/PaymentMethodsModal";
 import NotificationPreferencesModal from "../Components/dashboard/NotificationPreferencesModal";
-import { scheduleItems, networkingData, documents } from "../data/mockEvents";
+import ConfirmDeleteModal from "../Components/dashboard/ConfirmDeleteModal";
 import { useAuth } from "../context/AuthContext";
+
+// ✅ mockEvents se koi bhi import nahi — sab kuch real API se aata hai
 
 function MyEventsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState([]);
-  const [myEvents, setMyEvents] = useState([]);
+
+  const [tickets, setTickets]           = useState([]);
+  const [myEvents, setMyEvents]         = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
 
-  // Modal states
-  const [showEditProfile, setShowEditProfile] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  // ✅ Schedule — real tickets se derive hota hai (hardcoded nahi)
+  const [scheduleItems, setScheduleItems] = useState([]);
 
-  // Attendee ke purchased tickets fetch karo
+  // ✅ Networking — real attendee count from events user joined
+  const [networkingData, setNetworkingData] = useState(null);
+
+  // ✅ Documents — real tickets se derive hote hain (hardcoded nahi)
+  const [documents, setDocuments] = useState([]);
+
+  // Modal states
+  const [showEditProfile, setShowEditProfile]         = useState(false);
+  const [showPaymentModal, setShowPaymentModal]       = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [deleteTarget, setDeleteTarget]               = useState(null); // { id, title }
+
+  // ── Attendee: real tickets fetch ─────────────────────────────────────────
   useEffect(() => {
+    if (!user || user.role !== "attendee") return;
+
     const fetchMyTickets = async () => {
       try {
         const { data } = await axiosInstance.get("/api/tickets/mine");
+
         const mappedTickets = data.map((t) => ({
-          id: t._id,
-          ticketId: `TK-${String(t._id).slice(-5).toUpperCase()}`,
-          title: t.event?.title || "Unknown Event",
-          category: t.event?.tags?.[0] || "EVENT",
+          id:         t._id,
+          ticketId:   `TK-${String(t._id).slice(-5).toUpperCase()}`,
+          title:      t.event?.title || "Unknown Event",
+          category:   t.event?.tags?.[0] || "EVENT",
           accessType: t.ticketType,
-          date: `${t.event?.startDate || "TBA"} ${t.event?.startTime || ""}`,
-          location: t.event?.venue || "Location TBA",
+          date:       `${t.event?.startDate || "TBA"} ${t.event?.startTime || ""}`.trim(),
+          location:   t.event?.venue || "Location TBA",
           image:
             t.event?.previewImage ||
             "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=800&auto=format&fit=crop",
         }));
         setTickets(mappedTickets);
+
+        // ✅ Schedule — real tickets se derive karo (aane wali events)
+        const today = new Date();
+        const upcoming = data
+          .filter((t) => t.event?.startDate)
+          .sort((a, b) => new Date(a.event.startDate) - new Date(b.event.startDate))
+          .slice(0, 5)
+          .map((t, idx) => ({
+            date:     t.event.startDate,
+            time:     t.event.startTime || "",
+            title:    t.event.title,
+            subtitle: t.event.venue || "Location TBA",
+            tag:      idx === 0 ? "Next Up" : "",
+            active:   idx === 0,
+          }));
+        setScheduleItems(upcoming);
+
+        // ✅ Documents — real tickets se banao
+        const docs = data.map((t) => ({
+          id:       t._id,
+          icon:     "🎫",
+          title:    `${t.event?.title || "Event"} — Ticket`,
+          subtitle: `PDF · Issued ${new Date(t.purchasedAt || t.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+          ticketId: `TK-${String(t._id).slice(-5).toUpperCase()}`,
+        }));
+        setDocuments(docs);
+
+        // ✅ Networking — first upcoming event se data
+        if (data.length > 0) {
+          const firstEvent = data[0].event;
+          setNetworkingData({
+            attendeeCount: firstEvent?.reviewCount || 0, // proxy for activity
+            eventName:     firstEvent?.title || "your event",
+            extraCount:    0,
+            avatars:       [], // Real avatars future feature
+          });
+        }
       } catch (error) {
         console.error("Failed to fetch tickets", error);
       }
     };
-    if (user) fetchMyTickets();
+    fetchMyTickets();
   }, [user]);
 
-  // Organizer ke apne events fetch karo
+  // ── Organizer: real events fetch ──────────────────────────────────────────
   const fetchMyEvents = useCallback(async () => {
     if (user?.role !== "organizer") return;
     setEventsLoading(true);
@@ -66,37 +119,33 @@ function MyEventsPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchMyEvents();
-  }, [fetchMyEvents]);
+  useEffect(() => { fetchMyEvents(); }, [fetchMyEvents]);
 
-  // Event delete handler
-  const handleDeleteEvent = async (eventId, eventTitle) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${eventTitle}"?\nThis action cannot be undone.`
-    );
-    if (!confirmed) return;
+  const handleDeleteEvent = (eventId, eventTitle) => {
+    setDeleteTarget({ id: eventId, title: eventTitle });
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await axiosInstance.delete(`/api/events/${eventId}`);
+      await axiosInstance.delete(`/api/events/${deleteTarget.id}`);
       toast.success("Event deleted successfully.");
-      setMyEvents((prev) => prev.filter((e) => e._id !== eventId));
+      setMyEvents((prev) => prev.filter((e) => e._id !== deleteTarget.id));
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete event.");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
-  // Event edit handler
   const handleEditEvent = (event) => {
     navigate(`/organize/edit/${event._id}`, { state: { event } });
   };
 
   const profileUser = {
-    name: user?.name || "Guest",
+    name:       user?.name || "Guest",
     membership: user?.role === "organizer" ? "Organizer Account" : "Member",
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      user?.name || "Guest"
-    )}&background=8C6B45&color=fff&size=128`,
+    avatar:     `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "Guest")}&background=8C6B45&color=fff&size=128`,
   };
 
   return (
@@ -105,6 +154,7 @@ function MyEventsPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-10">
+
           {/* Organizer section */}
           {user?.role === "organizer" && (
             <OrganizerEvents
@@ -115,10 +165,14 @@ function MyEventsPage() {
             />
           )}
 
+          {/* Attendee section */}
           {user?.role === "attendee" && (
             <>
               <UpcomingTickets tickets={tickets} />
-              <MySchedule scheduleItems={scheduleItems} />
+              {/* ✅ Schedule from real tickets */}
+              {scheduleItems.length > 0 && (
+                <MySchedule scheduleItems={scheduleItems} />
+              )}
             </>
           )}
         </div>
@@ -126,12 +180,18 @@ function MyEventsPage() {
         <div className="space-y-6">
           {user?.role === "attendee" && (
             <>
-              <NetworkingHub data={networkingData} />
-              <CertificatesDocuments documents={documents} />
+              {/* ✅ Networking — real data, sirf tab dikho jab data ho */}
+              {networkingData && (
+                <NetworkingHub data={networkingData} />
+              )}
+
+              {/* ✅ Documents — real tickets se */}
+              {documents.length > 0 && (
+                <CertificatesDocuments documents={documents} />
+              )}
             </>
           )}
 
-          {/* Account Menu — all 3 buttons functional */}
           <AccountMenu
             onEditProfile={() => setShowEditProfile(true)}
             onPaymentClick={() => setShowPaymentModal(true)}
@@ -140,19 +200,21 @@ function MyEventsPage() {
         </div>
       </div>
 
-      {/* Edit Profile Modal */}
       {showEditProfile && (
         <EditProfileModal onClose={() => setShowEditProfile(false)} />
       )}
-
-      {/* Payment Methods Modal */}
       {showPaymentModal && (
         <PaymentMethodsModal onClose={() => setShowPaymentModal(false)} />
       )}
-
-      {/* Notification Preferences Modal */}
       {showNotificationModal && (
         <NotificationPreferencesModal onClose={() => setShowNotificationModal(false)} />
+      )}
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          eventTitle={deleteTarget.title}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

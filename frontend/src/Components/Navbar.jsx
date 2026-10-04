@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "../assets/logo.jpeg";
-import { User, ChevronDown, LogOut, Calendar } from "lucide-react";
+import { User, ChevronDown, LogOut, Calendar, Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAuthGate } from "../context/AuthGateContext";
@@ -33,6 +33,7 @@ function Navbar() {
   }
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginHighlight, setLoginHighlight] = useState(false);
   const menuRef = useRef(null);
 
@@ -75,6 +76,7 @@ function Navbar() {
           <span className="text-2xl font-bold text-[#3d2a2a]">LuxeEvents</span>
         </Link>
 
+        {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
@@ -143,8 +145,56 @@ function Navbar() {
               <User size={20} />
             </button>
           )}
+
+          {/* Mobile hamburger button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f0e6dc] transition-colors text-[#3d2a2a]"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile nav menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#fdf1ea] border-t border-[#e5ddd5] px-6 py-4 flex flex-col gap-1">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.path;
+            return (
+              <Link
+                key={link.label}
+                to={link.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-serif text-[15px] py-2.5 border-b border-[#f0e6dc] transition-colors ${
+                  isActive ? "text-[#b8862f]" : "text-[#3d2a2a] hover:text-[#b8862f]"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+          {!user && (
+            <div className="flex flex-col gap-2 mt-3">
+              <Link
+                to="/signin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2.5 text-sm font-semibold text-[#3d2a2a] border border-[#d5ccc3] rounded-full hover:bg-white transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/create-account"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2.5 text-sm font-semibold text-white bg-[#3d1823] rounded-full hover:bg-[#2c1119] transition-colors"
+              >
+                Join Free
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   );
 }
