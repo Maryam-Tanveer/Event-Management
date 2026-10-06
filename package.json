@@ -1,0 +1,14 @@
+{
+  "name": "luxeevents",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LuxeEvents - Full Stack Event Management Platform",
+  "scripts": {
+    "seed": "npm run seed --prefix backend",
+    "start:backend": "npm start --prefix backend",
+    "start:frontend": "npm start --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "test:backend": "npm test --prefix backend",
+    "build:frontend": "npm run build --prefix frontend"
+  }
+}

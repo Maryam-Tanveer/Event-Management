@@ -1,15 +1,15 @@
 import { X, Plus, Tag, DollarSign } from "lucide-react";
 import { useState } from "react";
 
-// Ye wahi categories hain jo EventPage ke Sidebar mein hain — consistent rehna zaroori hai
+// Consistent with discovery filters in EventPage
 const EVENT_CATEGORIES = [
   "Conferences",
   "Galas & Soirées",
-  "Workshops",
-  "Exhibitions",
   "Concerts",
-  "Sports",
+  "Art & Exhibitions",
+  "Workshops",
   "Networking",
+  "Sports",
   "Other",
 ];
 

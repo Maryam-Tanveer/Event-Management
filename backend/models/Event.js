@@ -15,6 +15,11 @@ const eventSchema = new mongoose.Schema(
     format: { type: String, enum: ["In-Person", "Virtual", "Hybrid"], default: "In-Person" },
     venue: { type: String, required: [true, "Venue is required"] },
     address: { type: String },
+    city: { type: String },
+    coordinates: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
     streamUrl: { type: String },
     previewImage: { type: String },
     galleryImages: [{ type: String }],

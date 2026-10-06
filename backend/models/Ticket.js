@@ -26,6 +26,13 @@ const ticketSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+    promoCode: {
+      type: String,
+    },
     // Stripe ka unique payment ID — refunds ke liye aur proof ke liye zaroori
     // Free events ke liye null allowed hai (isFreeTicket: true)
     paymentIntentId: {

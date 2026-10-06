@@ -63,7 +63,8 @@ function LivePreviewSidebar({ eventData }) {
                   Location
                 </p>
                 <p className="text-[#3d2a2a] font-semibold">
-                  {eventData.venue}, Venice
+                  {eventData.venue || "Venue TBA"}
+                  {eventData.city ? `, ${eventData.city}` : ""}
                 </p>
               </div>
               <div className="text-right">
@@ -71,7 +72,8 @@ function LivePreviewSidebar({ eventData }) {
                   Commencement
                 </p>
                 <p className="text-[#3d2a2a] font-semibold">
-                  Oct 24, 2025 · 19:30
+                  {eventData.startDate || "Date TBA"}
+                  {eventData.startTime ? ` · ${eventData.startTime}` : ""}
                 </p>
               </div>
             </div>
@@ -79,10 +81,10 @@ function LivePreviewSidebar({ eventData }) {
             {/* Ticket tier */}
             <div className="bg-[#faf7f4] border border-[#e8e0d8] rounded-lg p-3">
               <p className="text-xs font-semibold text-[#3d2a2a] mb-1">
-                Selected Admission Tier: {eventData.selectedTier}
+                Selected Admission Tier: {eventData.selectedTier || "General"}
               </p>
               <p className="text-[10px] text-[#a09080] leading-relaxed">
-                {eventData.tierDetails}
+                {eventData.tierDetails || "Full access to general session, networking, and proceedings."}
               </p>
             </div>
           </div>
@@ -94,7 +96,10 @@ function LivePreviewSidebar({ eventData }) {
         <span className="text-[10px] text-[#a09080] italic">
           Encrypted Preview Mode
         </span>
-        <button className="px-4 py-2 bg-[#8b2d3a] text-white text-xs font-semibold rounded-lg hover:bg-[#6d2330] transition-colors">
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="px-4 py-2 bg-[#8b2d3a] text-white text-xs font-semibold rounded-lg hover:bg-[#6d2330] transition-colors"
+        >
           Return to Curator
         </button>
       </div>
@@ -103,7 +108,7 @@ function LivePreviewSidebar({ eventData }) {
       <div className="px-4 pb-4">
         <div className="relative rounded-xl overflow-hidden">
           <img
-            src={eventData.previewImage}
+            src={eventData.previewImage || "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop"}
             alt="Live Preview"
             className="w-full h-32 object-cover"
           />
@@ -116,13 +121,13 @@ function LivePreviewSidebar({ eventData }) {
         </div>
         <div className="mt-2">
           <p className="text-[9px] text-[#a09080] uppercase tracking-wider">
-            Oct 24 · Venice, IT
+            {eventData.startDate || "Date TBA"} · {eventData.city || eventData.venue || "Global"}
           </p>
           <p className="text-sm font-serif font-semibold text-[#3d2a2a] truncate mt-0.5">
             {eventData.title || "Untitled Event"}
           </p>
           <p className="text-[10px] text-[#a09080]">
-            {eventData.venue} · From €850
+            {eventData.venue || "Venue TBA"} · {eventData.price !== undefined ? (eventData.price === 0 ? "Free" : `$${eventData.price}`) : "Custom Tier"}
           </p>
         </div>
       </div>

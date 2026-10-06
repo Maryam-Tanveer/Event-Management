@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit2, Trash2, Plus, Calendar, MapPin, Tag } from "lucide-react";
+import { Edit2, Trash2, Plus, Calendar, MapPin, Tag, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 function OrganizerEvents({ events, loading, onDelete, onEdit }) {
@@ -100,7 +100,15 @@ function OrganizerEvents({ events, loading, onDelete, onEdit }) {
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-col gap-2 shrink-0">
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <button
+                  onClick={() => navigate("/tickets", { state: { eventId: event._id } })}
+                  title="View public event page"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#b8862f] bg-[#fbf5ee] border border-[#e8dcd0] rounded-lg hover:bg-[#f5ebe0] transition-colors"
+                >
+                  <Eye size={12} />
+                  View
+                </button>
                 <button
                   onClick={() => onEdit(event)}
                   title="Edit event"

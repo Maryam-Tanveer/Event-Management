@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "../assets/logo.jpeg";
-import { User, ChevronDown, LogOut, Calendar } from "lucide-react";
+import { User, ChevronDown, LogOut, Calendar, Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAuthGate } from "../context/AuthGateContext";
@@ -16,23 +16,22 @@ function Navbar() {
     navLinks = [
       { label: "Discovery", path: "/" },
       { label: "My Events", path: "/my-events" },
-      { label: "Organize", path: "/organize" },
+      { label: "Curate Event", path: "/organize" },
     ];
   } else if (user?.role === "attendee") {
     navLinks = [
       { label: "Discovery", path: "/" },
-      { label: "Tickets", path: "/tickets" },
       { label: "My Tickets", path: "/my-events" },
     ];
   } else {
     navLinks = [
       { label: "Discovery", path: "/" },
-      { label: "Tickets", path: "/tickets" },
-      { label: "Organize", path: "/organize" },
+      { label: "Join as Organizer", path: "/create-account" },
     ];
   }
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [loginHighlight, setLoginHighlight] = useState(false);
   const menuRef = useRef(null);
 
@@ -58,6 +57,7 @@ function Navbar() {
   const handleLogout = () => {
     logout();
     setMenuOpen(false);
+    setMobileNavOpen(false);
     navigate("/signin");
   };
 
@@ -68,13 +68,14 @@ function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-[#fdf1ea] border-b border-[#e5ddd5]">
+    <nav className="w-full bg-[#fdf1ea] border-b border-[#e5ddd5] sticky top-0 z-40">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2">
           <img className="w-12 h-12 rounded-md object-cover" src={logo} alt="logo" />
           <span className="text-2xl font-bold text-[#3d2a2a]">LuxeEvents</span>
         </Link>
 
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
@@ -94,7 +95,8 @@ function Navbar() {
           })}
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right Section: User / Auth + Mobile Hamburger */}
+        <div className="flex items-center gap-3">
           {user ? (
             <div className="relative" ref={menuRef}>
               <button
@@ -143,8 +145,39 @@ function Navbar() {
               <User size={20} />
             </button>
           )}
+
+          {/* Mobile hamburger button */}
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            className="md:hidden p-2 text-[#3d2a2a] hover:text-[#b8862f] transition-colors"
+            aria-label="Toggle Navigation"
+          >
+            {mobileNavOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile navigation drawer */}
+      {mobileNavOpen && (
+        <div className="md:hidden bg-[#fdf1ea] border-t border-[#e5ddd5] px-6 py-4 space-y-3">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.path;
+            return (
+              <Link
+                key={link.label}
+                to={link.path}
+                onClick={() => setMobileNavOpen(false)}
+                className={`block font-serif text-base py-1 transition-colors ${
+                  isActive ? "text-[#b8862f] font-bold" : "text-[#3d2a2a] hover:text-[#b8862f]"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </nav>
   );
 }

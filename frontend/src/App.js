@@ -53,14 +53,9 @@ function App() {
             }
           />
 
-          <Route
-            path="/tickets"
-            element={
-              <ProtectedRoute>
-                <TicketPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/events" element={<EventPage />} />
+          <Route path="/tickets" element={<TicketPage />} />
+          <Route path="/tickets/:id" element={<TicketPage />} />
 
           <Route
             path="/my-events"

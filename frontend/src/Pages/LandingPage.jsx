@@ -1,39 +1,8 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { ArrowRight, Star, Calendar, MapPin, Users, Shield, Sparkles, Music, Palette, Utensils, Briefcase } from "lucide-react";
 import logo from "../assets/logo.jpeg";
-
-const featuredEvents = [
-  {
-    id: 1,
-    title: "Symphony Under the Stars",
-    category: "Music",
-    date: "Oct 12, 2026",
-    location: "Botanical Gardens, NY",
-    price: "From $85",
-    image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=800&auto=format&fit=crop",
-    badge: "FEATURED",
-  },
-  {
-    id: 2,
-    title: "Modern Perspectives Gallery",
-    category: "Art",
-    date: "Nov 05, 2026",
-    location: "The MET, NY",
-    price: "Free (RSVP)",
-    image: "https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=800&auto=format&fit=crop",
-    badge: "ART",
-  },
-  {
-    id: 3,
-    title: "Global Leadership Summit",
-    category: "Conference",
-    date: "Jan 15–17, 2027",
-    location: "Javits Center, NY",
-    price: "From $899",
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop",
-    badge: "CONFERENCE",
-  },
-];
 
 const categories = [
   { icon: Music, label: "Music & Concerts" },
@@ -51,6 +20,33 @@ const stats = [
 
 function LandingPage() {
   const navigate = useNavigate();
+  const [featuredEvents, setFeaturedEvents] = useState([]);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const { data } = await axios.get("/api/events?limit=3");
+        if (data.events && data.events.length > 0) {
+          const mapped = data.events.map((e) => ({
+            id: e._id,
+            title: e.title,
+            category: e.category,
+            date: e.startDate,
+            location: e.city ? `${e.venue}, ${e.city}` : e.venue,
+            price: e.price === 0 ? "Free (RSVP)" : `From $${e.price}`,
+            image:
+              e.previewImage ||
+              "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
+            badge: e.tags?.[0]?.toUpperCase() || "FEATURED",
+          }));
+          setFeaturedEvents(mapped);
+        }
+      } catch (err) {
+        console.error("Could not fetch featured events from backend", err);
+      }
+    };
+    fetchFeatured();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#FBF3EC] font-sans">
@@ -168,7 +164,15 @@ function LandingPage() {
               <h3 className="font-serif text-xl font-bold text-[#3d2a2a] mb-3">{card.title}</h3>
               <p className="text-[#7a6a6a] text-sm leading-relaxed mb-5">{card.desc}</p>
               <button
-                onClick={() => navigate("/create-account")}
+                onClick={() => {
+                  if (card.title === "Organizers") {
+                    navigate("/create-account", { state: { role: "organizer" } });
+                  } else if (card.title === "Attendees") {
+                    navigate("/create-account", { state: { role: "attendee" } });
+                  } else {
+                    navigate("/signin");
+                  }
+                }}
                 className="text-sm font-semibold text-[#b8862f] hover:text-[#8b5e1a] flex items-center gap-1 transition-colors"
               >
                 {card.cta} <ArrowRight size={14} />
@@ -226,7 +230,7 @@ function LandingPage() {
             <div
               key={event.id}
               className="bg-white rounded-2xl overflow-hidden border border-[#ede5dc] shadow-sm hover:shadow-lg transition-all group cursor-pointer"
-              onClick={() => navigate("/create-account")}
+              onClick={() => navigate("/tickets", { state: { eventId: event.id } })}
             >
               <div className="relative h-48 overflow-hidden">
                 <img

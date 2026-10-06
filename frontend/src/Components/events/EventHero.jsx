@@ -2,18 +2,15 @@
 
 import { useState } from "react";
 import { Search, MapPin, Calendar } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
- function EventHero( { onSearch }) {
-  const navigate = useNavigate();
-  // Ye teeno states search bar ke teeno inputs ki value store karte hain
+function EventHero({ onSearch }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
-  const [date, setDate] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   // Jab "Find Events" button click hoga ye function chalega
- const handleFindEvents = () => {
-    onSearch({ query: searchQuery, location, date });
+  const handleFindEvents = () => {
+    onSearch({ query: searchQuery, location, dateFrom, dateTo });
   };
 
   return (
@@ -52,61 +49,94 @@ import { useNavigate } from "react-router-dom";
         {/* Buttons */}
         <div className="flex gap-4 mb-10">
           <button 
-            onClick={() => navigate("/tickets")}
-            className="bg-[#3a0d1f] text-white px-6 py-3 font-semibold hover:bg-[#4a1428] transition-colors"
+            onClick={() => document.getElementById("events-results")?.scrollIntoView({ behavior: "smooth" })}
+            className="bg-[#3a0d1f] text-white px-6 py-3 font-semibold hover:bg-[#4a1428] transition-colors rounded-lg shadow-sm"
           >
-            Reserve Tickets
+            Explore Events
           </button>
           <button 
-            onClick={() => navigate("/tickets")}
-            className="bg-white/70 border border-stone-400 text-stone-900 px-6 py-3 font-semibold hover:bg-white transition-colors"
+            onClick={() => document.getElementById("events-results")?.scrollIntoView({ behavior: "smooth" })}
+            className="bg-white/70 border border-stone-400 text-stone-900 px-6 py-3 font-semibold hover:bg-white transition-colors rounded-lg"
           >
-            View Details
+            Browse Calendar
           </button>
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white rounded-md shadow-lg p-3 flex flex-col md:flex-row gap-3">
+        <div className="bg-white rounded-xl shadow-lg p-3 flex flex-col md:flex-row gap-3">
           {/* Search input */}
-          <div className="flex items-center gap-2 bg-[#fbeed9] px-4 py-3 flex-1">
-            <Search className="w-5 h-5 text-stone-500" />
+          <div className="flex items-center gap-2 bg-[#fbeed9] px-4 py-3 flex-1 rounded-lg">
+            <Search className="w-5 h-5 text-stone-500 shrink-0" />
             <input
               type="text"
-              placeholder="Search events, artists, or venues"
+              placeholder="Search by title, artist, or keyword"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent outline-none w-full placeholder:text-stone-500 text-stone-800"
+              onKeyDown={(e) => e.key === "Enter" && handleFindEvents()}
+              className="bg-transparent outline-none w-full placeholder:text-stone-500 text-stone-800 text-sm"
             />
           </div>
 
           {/* Location input */}
-          <div className="flex items-center gap-2 bg-[#fbeed9] px-4 py-3 flex-1">
-            <MapPin className="w-5 h-5 text-stone-500" />
+          <div className="flex items-center gap-2 bg-[#fbeed9] px-4 py-3 flex-1 rounded-lg">
+            <MapPin className="w-5 h-5 text-stone-500 shrink-0" />
             <input
               type="text"
-              placeholder="Location"
+              placeholder="City, venue, or address"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="bg-transparent outline-none w-full placeholder:text-stone-500 text-stone-800"
+              onKeyDown={(e) => e.key === "Enter" && handleFindEvents()}
+              className="bg-transparent outline-none w-full placeholder:text-stone-500 text-stone-800 text-sm"
             />
           </div>
 
-          {/* Date input */}
-          <div className="flex items-center gap-2 bg-[#fbeed9] px-4 py-3 flex-1">
-            <Calendar className="w-5 h-5 text-stone-500" />
-            <input
-              type="text"
-              placeholder="Any Date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent outline-none w-full placeholder:text-stone-500 text-stone-800"
-            />
+          {/* Date Range inputs */}
+          <div className="flex items-center gap-2 bg-[#fbeed9] px-3 py-2 flex-1 rounded-lg">
+            <Calendar className="w-5 h-5 text-stone-500 shrink-0" />
+            <div className="flex items-center gap-2 w-full">
+              <div className="flex flex-col flex-1">
+                <span className="text-[9px] uppercase font-bold text-stone-500 leading-none">From</span>
+                <input
+                  type="date"
+                  title="Start Date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleFindEvents()}
+                  className="bg-transparent outline-none w-full text-stone-800 text-xs cursor-pointer py-0.5"
+                />
+              </div>
+              <span className="text-stone-300 font-bold">-</span>
+              <div className="flex flex-col flex-1">
+                <span className="text-[9px] uppercase font-bold text-stone-500 leading-none">To</span>
+                <input
+                  type="date"
+                  title="End Date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleFindEvents()}
+                  className="bg-transparent outline-none w-full text-stone-800 text-xs cursor-pointer py-0.5"
+                />
+              </div>
+            </div>
+            {(dateFrom || dateTo) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                  onSearch({ query: searchQuery, location, dateFrom: "", dateTo: "" });
+                }}
+                className="text-[11px] text-stone-500 hover:text-stone-800 underline shrink-0 font-medium"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           {/* Find Events button */}
           <button
             onClick={handleFindEvents}
-            className="bg-[#3a0d1f] text-white px-8 py-3 font-semibold hover:bg-[#4a1428] transition-colors whitespace-nowrap"
+            className="bg-[#3a0d1f] text-white px-8 py-3 font-semibold hover:bg-[#4a1428] transition-colors whitespace-nowrap rounded-lg shadow-sm"
           >
             Find Events
           </button>

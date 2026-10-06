@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useLocation, useNavigate } from "react-router-dom";
-import { mockEvents } from "../data/mockEvents";
+import { useLocation, useNavigate, useSearchParams, useParams } from "react-router-dom";
 import EventGallery from "../Components/tickets/EventGallery";
 import EventDescription from "../Components/tickets/EventDescription";
 import EventAgenda from "../Components/tickets/EventAgenda";
@@ -13,8 +12,9 @@ import TicketSidebar from "../Components/tickets/TicketSidebar";
 const TicketPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  // If navigated directly from navbar, fallback to mock event 1
-  const eventId = location.state?.eventId || 1;
+  const { id: routeId } = useParams();
+  const [searchParams] = useSearchParams();
+  const eventIdParam = location.state?.eventId || searchParams.get("id") || routeId;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,17 +22,31 @@ const TicketPage = () => {
 
   useEffect(() => {
     const fetchEvent = async () => {
-      const mockEvent = mockEvents.find(e => e.id.toString() === eventId.toString());
-      if (mockEvent) {
-        setEvent(mockEvent);
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
-        const { data } = await axios.get(`/api/events/${eventId}`);
+
+        let targetId = eventIdParam;
+
+        // If no eventId specified (e.g. direct visit to /tickets), fetch the latest real event from DB
+        if (!targetId) {
+          try {
+            const { data } = await axios.get("/api/events?limit=1");
+            if (data.events && data.events.length > 0) {
+              targetId = data.events[0]._id;
+            }
+          } catch (e) {
+            console.warn("Could not fetch latest event for /tickets fallback", e);
+          }
+        }
+
+        if (!targetId) {
+          setError("No events are currently scheduled.");
+          setLoading(false);
+          return;
+        }
+
+        const { data } = await axios.get(`/api/events/${targetId}`);
 
         // Backend ka structure frontend components ke liye map karo
         const mappedEvent = {
@@ -43,14 +57,23 @@ const TicketPage = () => {
           image:
             data.previewImage ||
             "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
+          galleryImages: data.galleryImages || [],
           date: data.startDate,
           time: data.startTime,
-          location: data.venue,
+          venue: data.venue,
+          location: data.city ? `${data.venue}, ${data.city}` : data.venue,
           address: data.address,
+          city: data.city || "",
+          coordinates: data.coordinates || null,
+          format: data.format || "In-Person",
+          streamUrl: data.streamUrl || "",
           priceLabel: data.price === 0 ? "Free" : `$${data.price}`,
           price: data.price || 0,
           description: data.synopsis,
           organizer: data.organizer,
+          agenda: data.agenda || "",
+          selectedTier: data.selectedTier || "",
+          tierDetails: data.tierDetails || "",
         };
         setEvent(mappedEvent);
       } catch (err) {
@@ -68,7 +91,7 @@ const TicketPage = () => {
     };
 
     fetchEvent();
-  }, [eventId, navigate]);
+  }, [eventIdParam]);
 
   // Loading state
   if (loading) {
@@ -107,10 +130,10 @@ const TicketPage = () => {
           <div className="lg:col-span-2 space-y-10">
             <EventGallery event={event} />
             <EventDescription event={event} />
-            <EventAgenda />
-            <FeaturedGuests />
+            <EventAgenda event={event} />
+            <FeaturedGuests event={event} />
             <VenueLocation event={event} />
-            <ReviewsSection />
+            <ReviewsSection event={event} />
           </div>
 
           {/* Right Column — Ticket purchase sidebar */}

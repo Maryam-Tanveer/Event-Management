@@ -3,8 +3,8 @@ import EventHero from "../Components/events/EventHero";
 import Sidebar from "../Components/events/Sidebar";
 import EventsHeader from "../Components/events/EventsHeader";
 import EventsGrid from "../Components/events/EventsGrid";
-import { mockEvents } from "../data/mockEvents";
 import axios from "axios";
+import { useSearchParams } from "react-router-dom";
 
 const PRICE_MAP = {
   free:     { priceMin: 0, priceMax: 0 },
@@ -15,49 +15,43 @@ const PRICE_MAP = {
 };
 
 function EventPage() {
+  const [searchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
+  // Initialize from URL parameters or defaults
+  const [category, setCategory] = useState(() => searchParams.get("category") || "All Events");
+  const [priceKey, setPriceKey] = useState(() => searchParams.get("price") || "any");
+  const [sortBy, setSortBy] = useState(() => searchParams.get("sortBy") || "relevance");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("search") || "");
+  const [location, setLocation] = useState(() => searchParams.get("location") || "");
+  const [date, setDate] = useState(() => searchParams.get("date") || "");
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get("dateFrom") || "");
+  const [dateTo, setDateTo] = useState(() => searchParams.get("dateTo") || "");
 
-  const [category, setCategory] = useState("All Events");
-  const [priceKey, setPriceKey] = useState("any");
-  const [sortBy, setSortBy] = useState("relevance");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [location, setLocation] = useState("");
-  const [date, setDate] = useState("");
+  // Sync state if URL query params change (e.g. category button clicked in Footer)
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    if (cat && cat !== category) setCategory(cat);
 
-  const getFilteredMockEvents = () => {
-    let filteredMock = [...mockEvents];
-    if (category !== "All Events") {
-      filteredMock = filteredMock.filter(e => e.category === category);
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filteredMock = filteredMock.filter(e =>
-        e.title.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q) ||
-        (e.description && e.description.toLowerCase().includes(q))
-      );
-    }
-    if (location.trim()) {
-      const l = location.toLowerCase();
-      filteredMock = filteredMock.filter(e => e.location.toLowerCase().includes(l));
-    }
-    if (date.trim()) {
-      const d = date.toLowerCase();
-      filteredMock = filteredMock.filter(e => e.date.toLowerCase().includes(d));
-    }
-    const pParams = PRICE_MAP[priceKey] || {};
-    if (pParams.priceMin !== undefined) {
-      filteredMock = filteredMock.filter(e => e.price >= pParams.priceMin);
-    }
-    if (pParams.priceMax !== undefined) {
-      filteredMock = filteredMock.filter(e => e.price <= pParams.priceMax);
-    }
-    return filteredMock;
-  };
+    const q = searchParams.get("search");
+    if (q !== null && q !== searchQuery) setSearchQuery(q);
+
+    const loc = searchParams.get("location");
+    if (loc !== null && loc !== location) setLocation(loc);
+
+    const dt = searchParams.get("date");
+    if (dt !== null && dt !== date) setDate(dt);
+
+    const df = searchParams.get("dateFrom");
+    if (df !== null && df !== dateFrom) setDateFrom(df);
+
+    const dt2 = searchParams.get("dateTo");
+    if (dt2 !== null && dt2 !== dateTo) setDateTo(dt2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const fetchEvents = useCallback(async (currentPage = 1, append = false) => {
     try {
@@ -71,41 +65,44 @@ function EventPage() {
         ...(searchQuery.trim() && { search: searchQuery.trim() }),
         ...(location.trim() && { location: location.trim() }),
         ...(date.trim() && { date: date.trim() }),
+        ...(dateFrom.trim() && { dateFrom: dateFrom.trim() }),
+        ...(dateTo.trim() && { dateTo: dateTo.trim() }),
         ...priceParams,
       };
 
       const { data } = await axios.get("/api/events", { params });
 
-      if (data.totalCount === 0 && currentPage === 1) {
-        setEvents(getFilteredMockEvents());
-        setHasMore(false);
-      } else {
+      const mapped = (data.events || []).map((e) => ({
+        id: e._id,
+        title: e.title,
+        category: e.category || "All Events",
+        badge: e.tags?.[0]?.toUpperCase() || "EVENT",
+        image: e.previewImage || "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
+        date: e.startDate,
+        time: e.startTime,
+        location: e.city ? `${e.venue}, ${e.city}` : e.venue,
+        venue: e.venue,
+        address: e.address,
+        city: e.city,
+        coordinates: e.coordinates,
+        priceLabel: e.price === 0 ? "Free" : `$${e.price}`,
+        price: e.price || 0,
+        description: e.synopsis,
+      }));
 
-        const mapped = data.events.map((e) => ({
-          id: e._id,
-          title: e.title,
-          category: e.category || "All Events",
-          badge: e.tags?.[0]?.toUpperCase() || "EVENT",
-          image: e.previewImage || "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
-          date: e.startDate,
-          time: e.startTime,
-          location: e.venue,
-          priceLabel: e.price === 0 ? "Free" : `$${e.price}`,
-          price: e.price || 0,
-          description: e.synopsis,
-        }));
-        setEvents((prev) => (append ? [...prev, ...mapped] : mapped));
-        setHasMore(data.hasMore);
-      }
+      setEvents((prev) => (append ? [...prev, ...mapped] : mapped));
+      setHasMore(data.hasMore || false);
     } catch (err) {
-      console.error("Failed to fetch events", err);
-      setEvents(getFilteredMockEvents());
+      console.error("Failed to fetch events from backend:", err);
+      if (currentPage === 1) {
+        setEvents([]);
+      }
       setHasMore(false);
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, priceKey, sortBy, searchQuery, location, date]);
+  }, [category, priceKey, sortBy, searchQuery, location, date, dateFrom, dateTo]);
 
   // Re-fetch when filters change — reset to page 1
   useEffect(() => {
@@ -119,12 +116,34 @@ function EventPage() {
     fetchEvents(nextPage, true);
   };
 
-  const handleSearch = ({ query, location, date }) => {
+  const handleSearch = ({ query, location: loc, date: dt, dateFrom: df, dateTo: dt2 }) => {
     if (query !== undefined) setSearchQuery(query);
-    if (location !== undefined) setLocation(location);
-    if (date !== undefined) setDate(date);
+    if (loc !== undefined) setLocation(loc);
+    if (dt !== undefined) setDate(dt);
+    if (df !== undefined) setDateFrom(df);
+    if (dt2 !== undefined) setDateTo(dt2);
     document.getElementById("events-results")?.scrollIntoView({ behavior: "smooth" });
   };
+
+  const handleResetFilters = () => {
+    setCategory("All Events");
+    setPriceKey("any");
+    setSearchQuery("");
+    setLocation("");
+    setDate("");
+    setDateFrom("");
+    setDateTo("");
+    setSortBy("relevance");
+  };
+
+  const hasAnyFilterActive =
+    category !== "All Events" ||
+    priceKey !== "any" ||
+    searchQuery.trim() !== "" ||
+    location.trim() !== "" ||
+    date.trim() !== "" ||
+    dateFrom.trim() !== "" ||
+    dateTo.trim() !== "";
 
   return (
     <div className="bg-[#FBF3EC]">
@@ -137,22 +156,78 @@ function EventPage() {
             setCategory={setCategory}
             priceKey={priceKey}
             setPriceKey={setPriceKey}
+            dateFrom={dateFrom}
+            setDateFrom={setDateFrom}
+            dateTo={dateTo}
+            setDateTo={setDateTo}
+            onReset={handleResetFilters}
           />
 
           <main className="flex-1">
             <EventsHeader sortBy={sortBy} setSortBy={setSortBy} />
-            {searchQuery && (
-              <p className="text-sm text-stone-500 mb-4">
-                Showing results for "<span className="font-medium text-stone-800">{searchQuery}</span>"
-              </p>
+
+            {/* Active filter badges bar */}
+            {hasAnyFilterActive && (
+              <div className="flex flex-wrap items-center gap-2 mb-6 p-3 bg-white/70 border border-stone-200 rounded-xl">
+                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider mr-1">
+                  Active:
+                </span>
+                {category !== "All Events" && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f5e6d8] text-[#3d2a2a] text-xs font-medium rounded-full">
+                    Category: {category}
+                    <button onClick={() => setCategory("All Events")} className="hover:text-red-600 font-bold">×</button>
+                  </span>
+                )}
+                {priceKey !== "any" && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f5e6d8] text-[#3d2a2a] text-xs font-medium rounded-full">
+                    Price: {priceKey}
+                    <button onClick={() => setPriceKey("any")} className="hover:text-red-600 font-bold">×</button>
+                  </span>
+                )}
+                {searchQuery.trim() && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f5e6d8] text-[#3d2a2a] text-xs font-medium rounded-full">
+                    Keyword: "{searchQuery}"
+                    <button onClick={() => setSearchQuery("")} className="hover:text-red-600 font-bold">×</button>
+                  </span>
+                )}
+                {location.trim() && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f5e6d8] text-[#3d2a2a] text-xs font-medium rounded-full">
+                    Location: "{location}"
+                    <button onClick={() => setLocation("")} className="hover:text-red-600 font-bold">×</button>
+                  </span>
+                )}
+                {date.trim() && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f5e6d8] text-[#3d2a2a] text-xs font-medium rounded-full">
+                    Date: {date}
+                    <button onClick={() => setDate("")} className="hover:text-red-600 font-bold">×</button>
+                  </span>
+                )}
+                {(dateFrom.trim() || dateTo.trim()) && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f5e6d8] text-[#3d2a2a] text-xs font-medium rounded-full">
+                    Range: {dateFrom || "Any"} → {dateTo || "Any"}
+                    <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="hover:text-red-600 font-bold">×</button>
+                  </span>
+                )}
+                <button
+                  onClick={handleResetFilters}
+                  className="ml-auto text-xs text-orange-800 hover:text-orange-950 font-semibold underline"
+                >
+                  Clear All
+                </button>
+              </div>
             )}
+
             {loading && events.length === 0 ? (
-              <div className="text-center text-stone-500 py-16">Loading events...</div>
+              <div className="text-center text-stone-500 py-16 flex flex-col items-center justify-center">
+                <div className="w-8 h-8 border-2 border-[#8b2d3a] border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm">Finding events...</p>
+              </div>
             ) : (
               <EventsGrid
                 events={events}
                 hasMore={hasMore}
                 onLoadMore={handleLoadMore}
+                onResetFilters={handleResetFilters}
               />
             )}
           </main>

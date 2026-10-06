@@ -1,21 +1,13 @@
 const Event = require("../models/Event");
+const Ticket = require("../models/Ticket");
 const mongoose = require("mongoose");
 
 // Helper: User input ke regex special characters escape karo
-// Kyun? Agar user "(a+)+" search kare toh MongoDB regex engine freeze ho sakta hai
-// Ye function un characters ko literal treat karata hai — attack nahi ban sakte
-// Example: "(jazz)" → "\(jazz\)" → safe literal search
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // @route POST /api/events (protected, organizer only)
 const createEvent = async (req, res) => {
   try {
-    // ❌ Pehle tha: { ...req.body, organizer: req.user._id }
-    // Problem: req.body mein koi bhi field aa sakti thi — attacker extra/sensitive
-    // fields inject kar sakta tha (e.g. organizer override, qualityScore manipulation)
-    //
-    // ✅ Ab: Sirf woh exact fields lo jo hum expect karte hain — baaki sab ignore
-    // Ye "allowlist" approach hai — explicitly define karo kya allowed hai
     const {
       title,
       synopsis,
@@ -30,6 +22,8 @@ const createEvent = async (req, res) => {
       format,
       venue,
       address,
+      city,
+      coordinates,
       streamUrl,
       previewImage,
       galleryImages,
@@ -73,6 +67,11 @@ const createEvent = async (req, res) => {
       format,
       venue: venue.trim(),
       address,
+      city: city?.trim() || "",
+      coordinates: coordinates && typeof coordinates === "object" ? {
+        lat: Number(coordinates.lat) || 0,
+        lng: Number(coordinates.lng) || 0,
+      } : undefined,
       streamUrl,
       previewImage,
       galleryImages: Array.isArray(galleryImages) ? galleryImages : [],
@@ -125,16 +124,57 @@ const getEvents = async (req, res) => {
       ];
     }
 
-    if (req.query.priceMin !== undefined || req.query.priceMax !== undefined) {
+    if (req.query.location && req.query.location.trim()) {
+      const safeLoc = escapeRegex(req.query.location.trim().slice(0, 100));
+      const locCondition = [
+        { venue: { $regex: safeLoc, $options: "i" } },
+        { address: { $regex: safeLoc, $options: "i" } },
+        { city: { $regex: safeLoc, $options: "i" } },
+      ];
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, { $or: locCondition }];
+        delete filter.$or;
+      } else {
+        filter.$or = locCondition;
+      }
+    }
+
+    if (req.query.date && req.query.date.trim()) {
+      const safeDate = escapeRegex(req.query.date.trim().slice(0, 50));
+      filter.startDate = { $regex: safeDate, $options: "i" };
+    }
+
+    if (req.query.dateFrom || req.query.dateTo) {
+      if (typeof filter.startDate !== "object" || filter.startDate === null) {
+        filter.startDate = {};
+      }
+      if (req.query.dateFrom && req.query.dateFrom.trim()) {
+        filter.startDate.$gte = req.query.dateFrom.trim().slice(0, 50);
+      }
+      if (req.query.dateTo && req.query.dateTo.trim()) {
+        filter.startDate.$lte = req.query.dateTo.trim().slice(0, 50);
+      }
+    }
+
+    if (
+      (req.query.priceMin !== undefined && req.query.priceMin !== "") ||
+      (req.query.priceMax !== undefined && req.query.priceMax !== "")
+    ) {
       filter.price = {};
-      if (req.query.priceMin) filter.price.$gte = Number(req.query.priceMin);
-      if (req.query.priceMax) filter.price.$lte = Number(req.query.priceMax);
+      if (req.query.priceMin !== undefined && req.query.priceMin !== "") {
+        filter.price.$gte = Number(req.query.priceMin);
+      }
+      if (req.query.priceMax !== undefined && req.query.priceMax !== "") {
+        filter.price.$lte = Number(req.query.priceMax);
+      }
     }
 
     // Sort
     let sortOption = { createdAt: -1 };
     if (req.query.sortBy === "priceLow") sortOption = { price: 1 };
     if (req.query.sortBy === "priceHigh") sortOption = { price: -1 };
+    if (req.query.sortBy === "dateAsc") sortOption = { startDate: 1 };
+    if (req.query.sortBy === "dateDesc") sortOption = { startDate: -1 };
 
     const totalCount = await Event.countDocuments(filter);
     const events = await Event.find(filter)
@@ -205,7 +245,7 @@ const updateEvent = async (req, res) => {
     const {
       title, synopsis, category, price, tags,
       startDate, startTime, endDate, endTime,
-      timezone, format, venue, address, streamUrl,
+      timezone, format, venue, address, city, coordinates, streamUrl,
       previewImage, galleryImages, selectedTier, tierDetails,
       agenda, promoVideo, privacy,
     } = req.body;
@@ -234,6 +274,13 @@ const updateEvent = async (req, res) => {
     if (format !== undefined) updateFields.format = format;
     if (venue !== undefined) updateFields.venue = venue.trim();
     if (address !== undefined) updateFields.address = address;
+    if (city !== undefined) updateFields.city = city.trim();
+    if (coordinates !== undefined && typeof coordinates === "object") {
+      updateFields.coordinates = {
+        lat: Number(coordinates.lat) || 0,
+        lng: Number(coordinates.lng) || 0,
+      };
+    }
     if (streamUrl !== undefined) updateFields.streamUrl = streamUrl;
     if (previewImage !== undefined) updateFields.previewImage = previewImage;
     if (galleryImages !== undefined) updateFields.galleryImages = Array.isArray(galleryImages) ? galleryImages : [];
@@ -271,6 +318,8 @@ const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: "Not authorized. You can only delete your own events." });
     }
 
+    // Cascade delete associated tickets so attendees do not have dangling broken tickets
+    await Ticket.deleteMany({ event: req.params.id });
     await event.deleteOne();
 
     res.json({ message: "Event deleted successfully.", deletedId: req.params.id });

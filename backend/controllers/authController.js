@@ -5,23 +5,19 @@ const User = require("../models/User");
 
 // JWT token generate karne ka helper
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign({ id }, process.env.JWT_SECRET || "default_jwt_secret_for_tests_and_development_luxeevents", { expiresIn: "30d" });
 };
 
 // @route POST /api/auth/register
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    // ❌ Pehle tha: const { name, email, password, role } = req.body;
-    // Problem: koi bhi role: "organizer" bhej ke organizer ban jaata tha
-    // ✅ Ab: role req.body se bilkul nahi lete — always "attendee" set karte hain
-    // Organizer banana ek alag elevated action hona chahiye, self-service nahi
+    const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Please fill in all fields" });
     }
 
-    // Email format validate karo — mongoose mein ye check nahi tha
+    // Email format validate karo
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Please provide a valid email address" });
@@ -37,19 +33,24 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User with this email already exists" });
     }
 
-    // role field intentionally nahi diya — User model ka default "attendee" use hoga
-    // Ye ensures koi bhi direct API call se organizer nahi ban sakta
+    // Allow user to choose attendee or organizer
+    const allowedRoles = ["attendee", "organizer"];
+    const assignedRole = allowedRoles.includes(role?.toLowerCase())
+      ? role.toLowerCase()
+      : "attendee";
+
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
+      role: assignedRole,
     });
 
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role, // will always be "attendee"
+      role: user.role,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -226,7 +227,15 @@ const updateProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: "User not found." });
 
-    const { name, email, currentPassword, newPassword } = req.body;
+    const { name, email, role, currentPassword, newPassword } = req.body;
+
+    // --- Role update ---
+    if (role !== undefined) {
+      const allowedRoles = ["attendee", "organizer"];
+      if (allowedRoles.includes(role.toLowerCase())) {
+        user.role = role.toLowerCase();
+      }
+    }
 
     // --- Name update ---
     if (name !== undefined) {

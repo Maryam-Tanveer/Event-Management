@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ArrowRight, Ticket, Building } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
@@ -15,10 +15,9 @@ const schema = yup.object({
 
 function CreateAccountPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { registerUser } = useAuth();
-  // ❌ Pehle tha: useState("organizer") — naye users accidentally organizer ban jaate the
-  // ✅ Ab: default "attendee" — zyada users attendee hi hote hain
-  const [role, setRole] = useState("attendee");
+  const [role, setRole] = useState(location.state?.role || "attendee");
   const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
