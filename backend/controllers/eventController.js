@@ -101,7 +101,12 @@ const getEvents = async (req, res) => {
     const filter = {};
 
     if (req.query.category && req.query.category !== "All Events") {
-      filter.category = req.query.category;
+      const cats = req.query.category.split(",").map((c) => c.trim()).filter((c) => c && c !== "All Events");
+      if (cats.length > 1) {
+        filter.category = { $in: cats.map((c) => new RegExp(`^${escapeRegex(c)}$`, "i")) };
+      } else if (cats.length === 1) {
+        filter.category = { $regex: new RegExp(`^${escapeRegex(cats[0])}$`, "i") };
+      }
     }
 
     if (req.query.search) {

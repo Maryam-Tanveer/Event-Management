@@ -8,9 +8,9 @@ import { useSearchParams } from "react-router-dom";
 
 const PRICE_MAP = {
   free:     { priceMin: 0, priceMax: 0 },
-  under50:  { priceMin: 0, priceMax: 49 },
+  under50:  { priceMin: 0, priceMax: 50 },
   "50to150":{ priceMin: 50, priceMax: 150 },
-  "150plus":{ priceMin: 151, priceMax: undefined },
+  "150plus":{ priceMin: 150 },
   any:      {},
 };
 
