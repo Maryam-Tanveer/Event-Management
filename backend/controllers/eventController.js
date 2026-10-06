@@ -126,6 +126,8 @@ const getEvents = async (req, res) => {
         { title: { $regex: safeSearch, $options: "i" } },
         { venue: { $regex: safeSearch, $options: "i" } },
         { synopsis: { $regex: safeSearch, $options: "i" } },
+        { city: { $regex: safeSearch, $options: "i" } },
+        { tags: { $regex: safeSearch, $options: "i" } },
       ];
     }
 
