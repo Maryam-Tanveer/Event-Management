@@ -7,6 +7,7 @@
     "seed": "npm run seed --prefix backend",
     "start:backend": "npm start --prefix backend",
     "start:frontend": "npm start --prefix frontend",
+    "dev": "npm run dev:backend & npm run start:frontend",
     "dev:backend": "npm run dev --prefix backend",
     "test:backend": "npm test --prefix backend",
     "build:frontend": "npm run build --prefix frontend"
