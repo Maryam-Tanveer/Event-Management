@@ -56,13 +56,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow if no origin (e.g. Postman) or if it's in the allowed list
-      // Also allow any localhost/127.0.0.1 origin in development to prevent 403s
-      if (
-        !origin || 
-        allowedOrigins.includes(origin) || 
-        (process.env.NODE_ENV !== "production" && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")))
-      ) {
+      // Allow if no origin (e.g. Postman, mobile) or if it's in the allowed list
+      // Also allow any localhost/127.0.0.1 origin or any vercel.app domain
+      const isVercel = origin && (origin.endsWith(".vercel.app") || origin.includes("vercel.app"));
+      const isLocal = origin && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:"));
+
+      if (!origin || allowedOrigins.includes(origin) || isVercel || isLocal) {
         callback(null, true);
       } else {
         console.error(`CORS Error: Origin ${origin} is not allowed.`);

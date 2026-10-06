@@ -138,7 +138,7 @@ function TicketSidebar({ event }) {
     try {
       toast.loading("Registering...", { id: "free-ticket-toast" });
       await axios.post("/api/tickets/free", {
-        eventId: event.id,
+        eventId: event.id || event._id,
         ticketType: selectedTicket.label,
         quantity,
       });

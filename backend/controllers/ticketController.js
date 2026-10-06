@@ -135,6 +135,8 @@ const registerFreeTicket = async (req, res) => {
       return res.status(409).json({ message: "You are already registered for this event." });
     }
 
+    const freeRef = `free_${Date.now()}_${req.user._id}_${Math.random().toString(36).substring(2, 8)}`;
+
     const ticket = await Ticket.create({
       event: eventId,
       user: req.user._id,
@@ -142,7 +144,7 @@ const registerFreeTicket = async (req, res) => {
       quantity,
       totalAmount: 0,       // free hai
       isFreeTicket: true,   // flag set karo
-      // paymentIntentId intentionally absent for free tickets
+      paymentIntentId: freeRef, // unique reference to prevent null-index collisions
     });
 
     const populatedTicket = await ticket.populate(
@@ -152,6 +154,9 @@ const registerFreeTicket = async (req, res) => {
 
     res.status(201).json(populatedTicket);
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "You are already registered for this event." });
+    }
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
