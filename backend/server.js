@@ -73,6 +73,8 @@ app.use(
   })
 );
 
+app.options("*", cors());
+
 // ─── 3. RATE LIMITING ────────────────────────────────────────────────────────
 // Ye attack rokta hai: brute force login, spam registrations, DDoS attempts
 
