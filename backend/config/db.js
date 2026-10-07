@@ -1,8 +1,25 @@
 const mongoose = require("mongoose");
 
+let isConnecting = false;
+
 const connectDB = async () => {
+  // If already connected, reuse connection immediately (serverless optimization)
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  if (isConnecting) {
+    while (mongoose.connection.readyState === 2) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return;
+  }
+
+  isConnecting = true;
   try {
-    await mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/luxeevents");
+    await mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/luxeevents", {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+    });
     console.log("✅ MongoDB Connected successfully");
 
     // Fix legacy unique non-sparse index on tickets collection if present
@@ -19,7 +36,12 @@ const connectDB = async () => {
     }
   } catch (error) {
     console.error("❌ MongoDB connection failed:", error.message);
-    process.exit(1);
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
+    throw error;
+  } finally {
+    isConnecting = false;
   }
 };
 
