@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import EventHero from "../Components/events/EventHero";
 import Sidebar from "../Components/events/Sidebar";
 import EventsHeader from "../Components/events/EventsHeader";
 import EventsGrid from "../Components/events/EventsGrid";
-import axios from "axios";
-import { useSearchParams } from "react-router-dom";
-
+import axiosInstance from "../api/axiosInstance";
 const PRICE_MAP = {
   free:     { priceMin: 0, priceMax: 0 },
   under50:  { priceMin: 0, priceMax: 50 },
@@ -31,27 +30,10 @@ function EventPage() {
   const [dateFrom, setDateFrom] = useState(() => searchParams.get("dateFrom") || "");
   const [dateTo, setDateTo] = useState(() => searchParams.get("dateTo") || "");
 
-  // Sync state if URL query params change (e.g. category button clicked in Footer)
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat && cat !== category) setCategory(cat);
 
-    const q = searchParams.get("search");
-    if (q !== null && q !== searchQuery) setSearchQuery(q);
 
-    const loc = searchParams.get("location");
-    if (loc !== null && loc !== location) setLocation(loc);
 
-    const dt = searchParams.get("date");
-    if (dt !== null && dt !== date) setDate(dt);
 
-    const df = searchParams.get("dateFrom");
-    if (df !== null && df !== dateFrom) setDateFrom(df);
-
-    const dt2 = searchParams.get("dateTo");
-    if (dt2 !== null && dt2 !== dateTo) setDateTo(dt2);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
 
   const fetchEvents = useCallback(async (currentPage = 1, append = false) => {
     try {
@@ -70,7 +52,7 @@ function EventPage() {
         ...priceParams,
       };
 
-      const { data } = await axios.get("/api/events", { params });
+      const { data } = await axiosInstance.get("/api/events", { params });
 
       const mapped = (data.events || []).map((e) => ({
         id: e._id,
@@ -116,10 +98,10 @@ function EventPage() {
     fetchEvents(nextPage, true);
   };
 
-  const handleSearch = ({ query, location: loc, date: dt, dateFrom: df, dateTo: dt2 }) => {
+  const handleSearch = ({ query, location, date, dateFrom: df, dateTo: dt2 }) => {
     if (query !== undefined) setSearchQuery(query);
-    if (loc !== undefined) setLocation(loc);
-    if (dt !== undefined) setDate(dt);
+    if (location !== undefined) setLocation(location);
+    if (date !== undefined) setDate(date);
     if (df !== undefined) setDateFrom(df);
     if (dt2 !== undefined) setDateTo(dt2);
     document.getElementById("events-results")?.scrollIntoView({ behavior: "smooth" });
