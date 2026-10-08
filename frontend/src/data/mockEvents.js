@@ -102,6 +102,7 @@ export const organizeDefaults = {
   title: "", synopsis: "", category: "", price: "",
   tags: [], startDate: "", startTime: "", endDate: "", endTime: "",
   timezone: "", format: "In-Person", venue: "", address: "",
+  latitude: null, longitude: null,
   streamUrl: "", previewImage: "", qualityScore: 0,
   selectedTier: "", tierDetails: "", galleryImages: [],
   agendaSlots: [], guests: [], amenities: [], maxTickets: "",

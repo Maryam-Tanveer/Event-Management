@@ -27,6 +27,8 @@ function EventPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
   const [date, setDate] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const getFilteredMockEvents = () => {
     let filteredMock = [...mockEvents];
@@ -47,7 +49,13 @@ function EventPage() {
     }
     if (date.trim()) {
       const d = date.toLowerCase();
-      filteredMock = filteredMock.filter(e => e.date.toLowerCase().includes(d));
+      filteredMock = filteredMock.filter(e => e.date && e.date.toLowerCase().includes(d));
+    }
+    if (dateFrom.trim()) {
+      filteredMock = filteredMock.filter(e => !e.date || e.date >= dateFrom);
+    }
+    if (dateTo.trim()) {
+      filteredMock = filteredMock.filter(e => !e.date || e.date <= dateTo);
     }
     const pParams = PRICE_MAP[priceKey] || {};
     if (pParams.priceMin !== undefined) {
@@ -71,6 +79,8 @@ function EventPage() {
         ...(searchQuery.trim() && { search: searchQuery.trim() }),
         ...(location.trim() && { location: location.trim() }),
         ...(date.trim() && { date: date.trim() }),
+        ...(dateFrom.trim() && { dateFrom: dateFrom.trim() }),
+        ...(dateTo.trim() && { dateTo: dateTo.trim() }),
         ...priceParams,
       };
 
@@ -105,7 +115,7 @@ function EventPage() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, priceKey, sortBy, searchQuery, location, date]);
+  }, [category, priceKey, sortBy, searchQuery, location, date, dateFrom, dateTo]);
 
   // Re-fetch when filters change — reset to page 1
   useEffect(() => {
@@ -119,10 +129,12 @@ function EventPage() {
     fetchEvents(nextPage, true);
   };
 
-  const handleSearch = ({ query, location, date }) => {
+  const handleSearch = ({ query, location, date, dateFrom: df, dateTo: dt2 }) => {
     if (query !== undefined) setSearchQuery(query);
     if (location !== undefined) setLocation(location);
     if (date !== undefined) setDate(date);
+    if (df !== undefined) setDateFrom(df);
+    if (dt2 !== undefined) setDateTo(dt2);
     document.getElementById("events-results")?.scrollIntoView({ behavior: "smooth" });
   };
 

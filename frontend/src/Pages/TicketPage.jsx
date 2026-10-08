@@ -48,6 +48,8 @@ const TicketPage = () => {
           time:        data.startTime,
           location:    data.venue,
           address:     data.address,
+          latitude:    data.latitude ?? null,
+          longitude:   data.longitude ?? null,
           priceLabel:  data.price === 0 ? "Free" : `$${data.price}`,
           price:       data.price || 0,
           description: data.synopsis,

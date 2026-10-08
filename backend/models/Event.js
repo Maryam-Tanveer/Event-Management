@@ -44,6 +44,18 @@ const eventSchema = new mongoose.Schema(
     format:    { type: String, enum: ["In-Person", "Virtual", "Hybrid"], default: "In-Person" },
     venue:     { type: String, required: [true, "Venue is required"] },
     address:   { type: String },
+    latitude: {
+      type: Number,
+      default: null,
+      min: [-90, "Latitude must be between -90 and 90"],
+      max: [90, "Latitude must be between -90 and 90"],
+    },
+    longitude: {
+      type: Number,
+      default: null,
+      min: [-180, "Longitude must be between -180 and 180"],
+      max: [180, "Longitude must be between -180 and 180"],
+    },
     streamUrl: { type: String },
     previewImage:  { type: String },
     galleryImages: [{ type: String }],
