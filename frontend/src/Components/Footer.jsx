@@ -20,7 +20,10 @@ function Footer() {
   // Handle Newsletter Subscription
   const handleSubscribe = async (e) => {
     e.preventDefault();
-    if (email.trim()) {
+    if (!email.trim()) return;
+
+    setIsSubscribing(true);
+    try {
       toast.success(`You're on the list! We'll be in touch at ${email}.`);
       setEmail("");
     } catch (err) {

@@ -396,19 +396,7 @@ function DestinationSection({ eventData, setEventData }) {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#1a0f06] rounded-lg">
-          <LinkIcon size={14} className="text-[#8a7a6a] shrink-0" />
-          <input
-            type="text"
-            value={eventData.streamUrl || ""}
-            onChange={(e) =>
-              setEventData((prev) => ({ ...prev, streamUrl: e.target.value }))
-            }
-            placeholder="https://..."
-            className="w-full bg-transparent text-xs text-[#c9bfb3] focus:outline-none"
-          />
-        </div>
-      </div>
+      )}
     </section>
   );
 }

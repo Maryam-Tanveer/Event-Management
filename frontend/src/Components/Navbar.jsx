@@ -54,10 +54,10 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+    const handleLogout = () => {
     logout();
     setMenuOpen(false);
-    setMobileNavOpen(false);
+    setMobileMenuOpen(false);
     navigate("/signin");
   };
 
