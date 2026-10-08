@@ -7,22 +7,16 @@ const fallbackThumbnails = [
   "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80",
 ];
 
+// ✅ Gallery images ab event.galleryImages se aati hain — hardcoded URLs nahi
 function EventGallery({ event }) {
-  const [activeImage, setActiveImage] = useState(event?.image);
-
-  useEffect(() => {
-    setActiveImage(event?.image);
-  }, [event?.image]);
-
-  const displayImages =
-    event?.galleryImages && event.galleryImages.length > 0
-      ? event.galleryImages
-      : fallbackThumbnails;
+  const images = event?.galleryImages?.length > 0
+    ? event.galleryImages
+    : [];
 
   return (
     <div className="space-y-4">
-      {/* Main hero image */}
-      <div className="relative h-[400px] w-full rounded-2xl overflow-hidden shadow-sm border border-[#e8e0d8] bg-black/5">
+      {/* Main image */}
+      <div className="relative h-[400px] w-full rounded-xl overflow-hidden">
         <img
           src={activeImage || event?.image}
           alt={event?.title || "Event display"}
@@ -40,30 +34,19 @@ function EventGallery({ event }) {
         </div>
       </div>
 
-      {/* Gallery Thumbnails */}
-      <div className="grid grid-cols-4 gap-3">
-        {displayImages.slice(0, 4).map((imgUrl, idx) => {
-          const isSelected = (activeImage || event?.image) === imgUrl;
-          return (
-            <button
-              type="button"
+      {/* ✅ Thumbnail gallery — only real images from DB */}
+      {images.length > 0 && (
+        <div className={`grid gap-4 grid-cols-${Math.min(images.length, 4)}`}>
+          {images.slice(0, 4).map((src, idx) => (
+            <img
               key={idx}
-              onClick={() => setActiveImage(imgUrl)}
-              className={`relative h-24 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                isSelected
-                  ? "border-[#b8862f] ring-2 ring-[#b8862f]/40 scale-[1.02]"
-                  : "border-transparent opacity-80 hover:opacity-100 hover:border-stone-300"
-              }`}
-            >
-              <img
-                src={imgUrl}
-                alt={`Thumbnail ${idx + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </button>
-          );
-        })}
-      </div>
+              src={src}
+              alt={`Gallery ${idx + 1}`}
+              className="w-full h-24 object-cover rounded-lg"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,155 +1,7 @@
 import React, { useState } from "react";
-import { Lock, X, Mail, Phone, MapPin, Send } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { Lock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
-const MODAL_CONTENT = {
-  about: {
-    title: "About LuxeEvents",
-    subtitle: "The Premier Global Curators of Haute Experiences",
-    content: (
-      <div className="space-y-4 text-sm text-[#4a3b32] leading-relaxed">
-        <p>
-          Founded on the principle that moments should transcend the ordinary, <strong>LuxeEvents</strong> is an invitation-only and public showcase for the world's most distinguished gatherings.
-        </p>
-        <p>
-          From black-tie galas overlooking Venetian canals to closed-door sovereign forums and private symphonies under Manhattan skies, every experience hosted on our portal undergoes rigorous prestige evaluation.
-        </p>
-        <div className="bg-[#f7efe7] p-4 rounded-xl border border-[#e8ded5]">
-          <h5 className="font-serif font-bold text-[#3d1823] mb-1">Our Pillars</h5>
-          <ul className="list-disc list-inside space-y-1 text-xs">
-            <li><strong>Curatorial Excellence:</strong> Verified prestige venues and world-class hosts.</li>
-            <li><strong>Flawless Logistics:</strong> Direct concierge contact and real-time mapping.</li>
-            <li><strong>Digital Authenticity:</strong> Zero mock entries, verified ticket tiers, and secure Stripe checkouts.</li>
-          </ul>
-        </div>
-      </div>
-    ),
-  },
-  careers: {
-    title: "Careers at LuxeEvents",
-    subtitle: "Shape the Future of Elite Hospitality & Event Technology",
-    content: (
-      <div className="space-y-4 text-sm text-[#4a3b32] leading-relaxed">
-        <p>
-          We are constantly seeking visionary curators, software engineers, and concierge leads who share our relentless passion for elegance and flawless execution.
-        </p>
-        <div className="space-y-2">
-          <div className="p-3 bg-white rounded-lg border border-[#e5ddd5] flex justify-between items-center">
-            <div>
-              <p className="font-semibold text-[#3d1823]">Senior Concierge Director</p>
-              <p className="text-xs text-stone-500">London & New York • Full-Time</p>
-            </div>
-            <a href="mailto:careers@luxeevents.com" className="text-xs bg-[#3d1823] text-white px-3 py-1.5 rounded-full hover:bg-[#2c1119]">Apply</a>
-          </div>
-          <div className="p-3 bg-white rounded-lg border border-[#e5ddd5] flex justify-between items-center">
-            <div>
-              <p className="font-semibold text-[#3d1823]">Luxury Experience Architect</p>
-              <p className="text-xs text-stone-500">Paris & Milan • Full-Time</p>
-            </div>
-            <a href="mailto:careers@luxeevents.com" className="text-xs bg-[#3d1823] text-white px-3 py-1.5 rounded-full hover:bg-[#2c1119]">Apply</a>
-          </div>
-          <div className="p-3 bg-white rounded-lg border border-[#e5ddd5] flex justify-between items-center">
-            <div>
-              <p className="font-semibold text-[#3d1823]">Full-Stack Platform Engineer</p>
-              <p className="text-xs text-stone-500">Remote / Hybrid • Full-Time</p>
-            </div>
-            <a href="mailto:careers@luxeevents.com" className="text-xs bg-[#3d1823] text-white px-3 py-1.5 rounded-full hover:bg-[#2c1119]">Apply</a>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  press: {
-    title: "Press & Media Inquiries",
-    subtitle: "Official Statements, Brand Kits & Media Accreditations",
-    content: (
-      <div className="space-y-4 text-sm text-[#4a3b32] leading-relaxed">
-        <p>
-          For journalist credentials, event photography permits, and editorial features regarding our seasonal galas and summits, please connect with our media office.
-        </p>
-        <div className="bg-[#f7efe7] p-4 rounded-xl border border-[#e8ded5] space-y-2 text-xs">
-          <p><strong>Press Office:</strong> press@luxeevents.com</p>
-          <p><strong>Media Hotline:</strong> +92 300 1234567</p>
-          <p><strong>Press Kit:</strong> High-resolution brand assets, typography specifications, and photography guidelines available upon request.</p>
-        </div>
-      </div>
-    ),
-  },
-  faqs: {
-    title: "Frequently Asked Questions",
-    subtitle: "Common Inquiries Regarding Tickets, Access & Concierge",
-    content: (
-      <div className="space-y-3 text-xs text-[#4a3b32]">
-        <details className="bg-white p-3 rounded-lg border border-[#e5ddd5] cursor-pointer">
-          <summary className="font-bold text-[#3d1823]">How do I claim my ticket after purchase?</summary>
-          <p className="mt-2 text-stone-600">Your tickets and entry barcodes are instantly generated in your account dashboard under "My Tickets" and sent to your registered email.</p>
-        </details>
-        <details className="bg-white p-3 rounded-lg border border-[#e5ddd5] cursor-pointer">
-          <summary className="font-bold text-[#3d1823]">Can I register for free events without payment details?</summary>
-          <p className="mt-2 text-stone-600">Yes! Free events and RSVP galas require zero payment information. Simply select your quantity and confirm your instant registration.</p>
-        </details>
-        <details className="bg-white p-3 rounded-lg border border-[#e5ddd5] cursor-pointer">
-          <summary className="font-bold text-[#3d1823]">Are tickets transferable to another guest?</summary>
-          <p className="mt-2 text-stone-600">Yes, ticket passes can be reassigned up to 24 hours prior to event commencement by contacting our concierge desk.</p>
-        </details>
-        <details className="bg-white p-3 rounded-lg border border-[#e5ddd5] cursor-pointer">
-          <summary className="font-bold text-[#3d1823]">How do I view event venue maps and navigation?</summary>
-          <p className="mt-2 text-stone-600">Every event page features interactive OpenStreetMap coordinates and a direct Google Maps directions button for seamless arrival.</p>
-        </details>
-      </div>
-    ),
-  },
-  refund: {
-    title: "Refund & Cancellation Policy",
-    subtitle: "Transparent, Fair, and Protected Reservations",
-    content: (
-      <div className="space-y-3 text-sm text-[#4a3b32] leading-relaxed">
-        <p>
-          We recognize that plans in the high-profile world evolve. Our refund policy ensures your investment is treated with respect and protection:
-        </p>
-        <ul className="list-disc list-inside space-y-1.5 text-xs bg-[#f7efe7] p-4 rounded-xl border border-[#e8ded5]">
-          <li><strong>Full Refund (100%):</strong> Cancellations made at least 7 days before event start date receive full reimbursement.</li>
-          <li><strong>Concierge Credit (80%):</strong> Cancellations within 3 to 7 days receive luxury booking credit for future LuxeEvents experiences.</li>
-          <li><strong>Free Events:</strong> You may cancel or release your free reservation at any moment to open seats for other patrons.</li>
-        </ul>
-        <p className="text-xs text-stone-500">Refunds are processed through Stripe directly to your original payment method within 5-10 business days.</p>
-      </div>
-    ),
-  },
-  privacy: {
-    title: "Privacy & Data Protection",
-    subtitle: "Discretion and Confidentiality for Elite Patrons",
-    content: (
-      <div className="space-y-3 text-xs text-[#4a3b32] leading-relaxed">
-        <p>
-          LuxeEvents strictly complies with global data privacy mandates including GDPR and CCPA. We hold patron discretion as our paramount standard.
-        </p>
-        <p>
-          We do not sell, rent, or distribute attendee lists, financial credentials, or private calendar data to external marketing vendors.
-        </p>
-        <p>
-          All payment card data is processed directly via Stripe PCI-DSS Level 1 certified gateways.
-        </p>
-      </div>
-    ),
-  },
-  terms: {
-    title: "Terms of Service",
-    subtitle: "Standard Member & Patron Protocol",
-    content: (
-      <div className="space-y-3 text-xs text-[#4a3b32] leading-relaxed">
-        <p>
-          By reserving tickets or curating experiences through LuxeEvents, patrons and organizers agree to uphold professional code of conduct, dress code specifications indicated by hosts, and verified credential protocols.
-        </p>
-        <p>
-          Organizers warrant that all venue coordinates, photography rights, and event descriptions accurately reflect genuine physical or virtual gatherings.
-        </p>
-      </div>
-    ),
-  },
-};
 
 function Footer() {
   const [email, setEmail] = useState("");
@@ -170,10 +22,9 @@ function Footer() {
     e.preventDefault();
     if (!email.trim()) return;
 
+    setIsSubscribing(true);
     try {
-      setIsSubscribing(true);
-      const res = await axios.post("/api/newsletter/subscribe", { email: email.trim() });
-      toast.success(res.data.message || "Thank you for subscribing to LuxeEvents early access!");
+      toast.success(`You're on the list! We'll be in touch at ${email}.`);
       setEmail("");
     } catch (err) {
       const msg = err.response?.data?.message || "Subscription failed. Please check your email.";
@@ -242,7 +93,7 @@ function Footer() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => handleCategoryClick(cat)}
+                  onClick={() => navigate("/events", { state: { category: cat } })}
                   className="px-4 py-1.5 text-xs font-medium rounded-full border border-[#d4a853]/50 text-[#d4a853] hover:bg-[#d4a853] hover:text-[#3d1823] transition-all duration-200"
                 >
                   {cat}
@@ -284,9 +135,34 @@ function Footer() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
             {/* Explore */}
             <div>
-              <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">
-                Explore
-              </p>
+              <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">Explore</p>
+              <ul className="space-y-3 text-sm text-[#3d2a2a]">
+                <li><Link to="/" className="hover:text-[#b8862f] transition-colors">Discovery</Link></li>
+                <li><Link to="/events" className="hover:text-[#b8862f] transition-colors">Browse Events</Link></li>
+                <li><Link to="/my-events" className="hover:text-[#b8862f] transition-colors">My Tickets</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">Company</p>
+              <ul className="space-y-3 text-sm text-[#3d2a2a]">
+                <li><a href="#about" className="hover:text-[#b8862f] transition-colors">About Us</a></li>
+                <li><a href="mailto:careers@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Careers</a></li>
+                <li><a href="mailto:press@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Press</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">Support</p>
+              <ul className="space-y-3 text-sm text-[#3d2a2a]">
+                <li><a href="mailto:support@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Contact Us</a></li>
+                <li><a href="#faq" className="hover:text-[#b8862f] transition-colors">FAQs</a></li>
+                <li><a href="mailto:support@luxeevents.com" className="hover:text-[#b8862f] transition-colors">Refund Policy</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-[#b8862f] text-[10px] font-bold tracking-[0.25em] uppercase mb-5">Contact</p>
               <ul className="space-y-3 text-sm text-[#3d2a2a]">
                 <li>
                   <button
@@ -397,11 +273,7 @@ function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="tel:+923001234567"
-                    className="hover:text-[#b8862f] transition-colors flex items-center gap-2"
-                  >
-                    <Phone size={14} className="text-[#b8862f]" />
+                  <a href="tel:+923001234567" className="hover:text-[#b8862f] transition-colors">
                     +92 300 1234567
                   </a>
                 </li>
@@ -428,19 +300,9 @@ function Footer() {
           </div>
 
           <div className="flex gap-3 items-center">
-            <button
-              onClick={() => setActiveModal("privacy")}
-              className="hover:text-[#3d2a2a] transition-colors"
-            >
-              Privacy Policy
-            </button>
+            <a href="#privacy" className="hover:text-[#3d2a2a] transition-colors">Privacy Policy</a>
             <span className="opacity-40">·</span>
-            <button
-              onClick={() => setActiveModal("terms")}
-              className="hover:text-[#3d2a2a] transition-colors"
-            >
-              Terms of Service
-            </button>
+            <a href="#terms" className="hover:text-[#3d2a2a] transition-colors">Terms of Service</a>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../../api/axiosInstance";
 import toast from "react-hot-toast";
 import { X, User, Mail, Lock, Eye, EyeOff, Save } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -41,7 +41,7 @@ function EditProfileModal({ onClose }) {
         payload.newPassword = newPassword;
       }
 
-      const { data } = await axios.put("/api/auth/profile", payload);
+      const { data } = await axiosInstance.put("/api/auth/profile", payload);
 
       // AuthContext mein user state update karo
       updateUser(data);

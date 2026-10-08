@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Save, Eye, Rocket, ArrowLeft } from "lucide-react";
@@ -45,8 +45,8 @@ function OrganizePage() {
           format: stateEvent.format || "In-Person",
           venue: stateEvent.venue || "",
           address: stateEvent.address || "",
-          city: stateEvent.city || "",
-          coordinates: stateEvent.coordinates || null,
+          latitude: (stateEvent.latitude !== undefined && stateEvent.latitude !== null && stateEvent.latitude !== "") ? Number(stateEvent.latitude) : null,
+          longitude: (stateEvent.longitude !== undefined && stateEvent.longitude !== null && stateEvent.longitude !== "") ? Number(stateEvent.longitude) : null,
           streamUrl: stateEvent.streamUrl || "",
           previewImage: stateEvent.previewImage || "",
           qualityScore: stateEvent.qualityScore || 0,
@@ -59,7 +59,7 @@ function OrganizePage() {
         });
       } else {
         // Direct URL navigation — API se fetch karo
-        axios.get(`/api/events/${eventId}`)
+        axiosInstance.get(`/api/events/${eventId}`)
           .then(({ data }) => {
             setEventData({
               title: data.title || "",
@@ -75,8 +75,8 @@ function OrganizePage() {
               format: data.format || "In-Person",
               venue: data.venue || "",
               address: data.address || "",
-              city: data.city || "",
-              coordinates: data.coordinates || null,
+              latitude: (data.latitude !== undefined && data.latitude !== null && data.latitude !== "") ? Number(data.latitude) : null,
+              longitude: (data.longitude !== undefined && data.longitude !== null && data.longitude !== "") ? Number(data.longitude) : null,
               streamUrl: data.streamUrl || "",
               previewImage: data.previewImage || "",
               qualityScore: data.qualityScore || 0,
@@ -179,25 +179,29 @@ function OrganizePage() {
         format: eventData.format,
         venue: eventData.venue,
         address: eventData.address,
-        city: eventData.city || "",
-        coordinates: eventData.coordinates || undefined,
+        latitude: (eventData.latitude !== undefined && eventData.latitude !== null && eventData.latitude !== "") ? Number(eventData.latitude) : null,
+        longitude: (eventData.longitude !== undefined && eventData.longitude !== null && eventData.longitude !== "") ? Number(eventData.longitude) : null,
         streamUrl: eventData.streamUrl,
         previewImage: eventData.previewImage,
         selectedTier: eventData.selectedTier,
         tierDetails: eventData.tierDetails,
-        agenda: eventData.agenda,
         promoVideo: eventData.promoVideo,
         privacy: eventData.privacy,
         galleryImages: eventData.galleryImages || [],
+        // ✅ New dynamic fields
+        agendaSlots: eventData.agendaSlots || [],
+        guests:      eventData.guests      || [],
+        amenities:   eventData.amenities   || [],
+        maxTickets:  eventData.maxTickets  || null,
       };
 
       if (isEditMode) {
         // ✅ Edit mode — PUT request
-        await axios.put(`/api/events/${eventId}`, payload);
+        await axiosInstance.put(`/api/events/${eventId}`, payload);
         toast.success("Event updated successfully!", { id: "publish-toast" });
       } else {
         // ✅ Create mode — POST request
-        await axios.post("/api/events", payload);
+        await axiosInstance.post("/api/events", payload);
         localStorage.removeItem(DRAFT_KEY); // draft clear karo
         toast.success("Event published successfully!", { id: "publish-toast" });
       }

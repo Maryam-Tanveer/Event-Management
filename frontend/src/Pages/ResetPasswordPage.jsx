@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ArrowRight, CheckCircle } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import toast from "react-hot-toast";
 
 function ResetPasswordPage() {
@@ -53,7 +53,7 @@ function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      await axios.post("/api/auth/reset-password", { token, password });
+      await axiosInstance.post("/api/auth/reset-password", { token, password });
       setDone(true);
       toast.success("Password reset successful!");
       // 2 second baad signin pe redirect

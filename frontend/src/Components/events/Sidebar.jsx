@@ -1,159 +1,66 @@
-import React from "react";
-import { categoryOptions, priceOptions } from "../../data/constants";
-import { Calendar, RotateCcw } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import axiosInstance from "../../api/axiosInstance";
+import { priceOptions } from "../../data/mockEvents";
 
-function Sidebar({
-  category,
-  setCategory,
-  priceKey,
-  setPriceKey,
-  dateFrom,
-  setDateFrom,
-  dateTo,
-  setDateTo,
-  onReset,
-}) {
-  const hasActiveFilters =
-    category !== "All Events" ||
-    priceKey !== "any" ||
-    Boolean(dateFrom) ||
-    Boolean(dateTo);
+function Sidebar({ category, setCategory, priceKey, setPriceKey }) {
+  // ✅ Categories DB se fetch hoti hain — hardcoded nahi
+  const [categoryOptions, setCategoryOptions] = useState(["All Events"]);
+  const [loadingCats, setLoadingCats] = useState(true);
 
-  // Helper for quick date presets
-  const handleQuickDate = (type) => {
-    const today = new Date();
-    const formatDate = (d) => d.toISOString().split("T")[0];
-
-    if (type === "today") {
-      const todayStr = formatDate(today);
-      if (setDateFrom) setDateFrom(todayStr);
-      if (setDateTo) setDateTo(todayStr);
-    } else if (type === "weekend") {
-      const day = today.getDay();
-      const diffToSat = (6 - day + 7) % 7;
-      const sat = new Date(today);
-      sat.setDate(today.getDate() + diffToSat);
-      const sun = new Date(sat);
-      sun.setDate(sat.getDate() + 1);
-
-      if (setDateFrom) setDateFrom(formatDate(sat));
-      if (setDateTo) setDateTo(formatDate(sun));
-    } else if (type === "month") {
-      const nextMonth = new Date(today);
-      nextMonth.setDate(today.getDate() + 30);
-      if (setDateFrom) setDateFrom(formatDate(today));
-      if (setDateTo) setDateTo(formatDate(nextMonth));
-    } else if (type === "clear") {
-      if (setDateFrom) setDateFrom("");
-      if (setDateTo) setDateTo("");
-    }
-  };
-
-  // Category selection handler supporting multi-selection or single-toggle
-  const handleCategoryToggle = (cat) => {
-    if (cat === "All Events") {
-      setCategory("All Events");
-      return;
-    }
-
-    if (category === "All Events" || !category) {
-      setCategory(cat);
-      return;
-    }
-
-    const currentCats = category.split(",").map((c) => c.trim()).filter(Boolean);
-    const exists = currentCats.includes(cat);
-
-    let nextCats;
-    if (exists) {
-      nextCats = currentCats.filter((c) => c !== cat);
-    } else {
-      nextCats = [...currentCats, cat];
-    }
-
-    if (nextCats.length === 0) {
-      setCategory("All Events");
-    } else {
-      setCategory(nextCats.join(","));
-    }
-  };
-
-  const isCatSelected = (cat) => {
-    if (cat === "All Events") return category === "All Events" || !category;
-    const currentCats = (category || "").split(",").map((c) => c.trim());
-    return currentCats.includes(cat);
-  };
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await axiosInstance.get("/api/events/categories");
+        if (Array.isArray(data) && data.length > 0) {
+          setCategoryOptions(data);
+        }
+      } catch {
+        // Fallback to "All Events" only
+      } finally {
+        setLoadingCats(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   return (
-    <aside className="w-full lg:w-64 flex-shrink-0">
-      {/* Active filters header / reset */}
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-200">
-        <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-          Filter Events
-        </span>
-        {hasActiveFilters && (
-          <button
-            onClick={() => {
-              setCategory("All Events");
-              setPriceKey("any");
-              if (setDateFrom) setDateFrom("");
-              if (setDateTo) setDateTo("");
-              if (onReset) onReset();
-            }}
-            className="flex items-center gap-1 text-xs text-amber-800 hover:text-amber-950 font-semibold underline"
-          >
-            <RotateCcw size={11} />
-            Reset All
-          </button>
-        )}
-      </div>
-
-      {/* 1. Categories Filter */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-stone-900">Categories</h4>
-          {category !== "All Events" && (
-            <button
-              onClick={() => setCategory("All Events")}
-              className="text-[11px] text-stone-500 hover:underline"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col gap-1">
-          {categoryOptions.map((cat) => {
-            const selected = isCatSelected(cat);
-            return (
+    <aside className="w-full lg:w-56 flex-shrink-0">
+      {/* Categories */}
+      <div className="mb-8">
+        <h4 className="text-sm font-semibold text-stone-900 mb-3">Categories</h4>
+        <div className="flex flex-col gap-2">
+          {loadingCats ? (
+            // Skeleton loading
+            [1, 2, 3, 4].map((n) => (
+              <div key={n} className="h-4 bg-stone-100 rounded animate-pulse w-3/4" />
+            ))
+          ) : (
+            categoryOptions.map((cat) => (
               <label
                 key={cat}
-                className={`flex items-center gap-2.5 text-xs cursor-pointer py-1.5 px-2 rounded-lg transition-colors ${
-                  selected
-                    ? "bg-[#f5e6d8] text-[#3d1823] font-semibold"
-                    : "text-stone-600 hover:bg-stone-100"
-                }`}
+                className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer"
               >
                 <input
                   type="checkbox"
-                  checked={selected}
-                  onChange={() => handleCategoryToggle(cat)}
-                  className="rounded border-stone-300 text-amber-800 focus:ring-amber-700 cursor-pointer"
+                  checked={category === cat}
+                  onChange={() => setCategory(cat)}
+                  className="rounded border-stone-300 text-orange-700 focus:ring-orange-600"
                 />
-                <span className="flex-1">{cat}</span>
+                {cat}
               </label>
-            );
-          })}
+            ))
+          )}
         </div>
       </div>
 
-      {/* 2. Price Range Filter */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-stone-900">Price Range</h4>
-          {priceKey !== "any" && (
-            <button
-              onClick={() => setPriceKey("any")}
-              className="text-[11px] text-stone-500 hover:underline"
+      {/* Price Range */}
+      <div>
+        <h4 className="text-sm font-semibold text-stone-900 mb-3">Price Range</h4>
+        <div className="flex flex-col gap-2">
+          {priceOptions.map((p) => (
+            <label
+              key={p.key}
+              className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer"
             >
               Clear
             </button>

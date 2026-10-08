@@ -31,7 +31,7 @@ function Navbar() {
   }
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginHighlight, setLoginHighlight] = useState(false);
   const menuRef = useRef(null);
 
@@ -54,10 +54,10 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+    const handleLogout = () => {
     logout();
     setMenuOpen(false);
-    setMobileNavOpen(false);
+    setMobileMenuOpen(false);
     navigate("/signin");
   };
 
@@ -75,7 +75,7 @@ function Navbar() {
           <span className="text-2xl font-bold text-[#3d2a2a]">LuxeEvents</span>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
@@ -148,34 +148,51 @@ function Navbar() {
 
           {/* Mobile hamburger button */}
           <button
-            type="button"
-            onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            className="md:hidden p-2 text-[#3d2a2a] hover:text-[#b8862f] transition-colors"
-            aria-label="Toggle Navigation"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f0e6dc] transition-colors text-[#3d2a2a]"
+            aria-label="Toggle menu"
           >
-            {mobileNavOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile navigation drawer */}
-      {mobileNavOpen && (
-        <div className="md:hidden bg-[#fdf1ea] border-t border-[#e5ddd5] px-6 py-4 space-y-3">
+      {/* Mobile nav menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#fdf1ea] border-t border-[#e5ddd5] px-6 py-4 flex flex-col gap-1">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
             return (
               <Link
                 key={link.label}
                 to={link.path}
-                onClick={() => setMobileNavOpen(false)}
-                className={`block font-serif text-base py-1 transition-colors ${
-                  isActive ? "text-[#b8862f] font-bold" : "text-[#3d2a2a] hover:text-[#b8862f]"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-serif text-[15px] py-2.5 border-b border-[#f0e6dc] transition-colors ${
+                  isActive ? "text-[#b8862f]" : "text-[#3d2a2a] hover:text-[#b8862f]"
                 }`}
               >
                 {link.label}
               </Link>
             );
           })}
+          {!user && (
+            <div className="flex flex-col gap-2 mt-3">
+              <Link
+                to="/signin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2.5 text-sm font-semibold text-[#3d2a2a] border border-[#d5ccc3] rounded-full hover:bg-white transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/create-account"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2.5 text-sm font-semibold text-white bg-[#3d1823] rounded-full hover:bg-[#2c1119] transition-colors"
+              >
+                Join Free
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </nav>

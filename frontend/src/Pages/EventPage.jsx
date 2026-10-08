@@ -5,6 +5,7 @@ import Sidebar from "../Components/events/Sidebar";
 import EventsHeader from "../Components/events/EventsHeader";
 import EventsGrid from "../Components/events/EventsGrid";
 import axiosInstance from "../api/axiosInstance";
+
 const PRICE_MAP = {
   free:     { priceMin: 0, priceMax: 0 },
   under50:  { priceMin: 0, priceMax: 50 },
@@ -29,11 +30,6 @@ function EventPage() {
   const [date, setDate] = useState(() => searchParams.get("date") || "");
   const [dateFrom, setDateFrom] = useState(() => searchParams.get("dateFrom") || "");
   const [dateTo, setDateTo] = useState(() => searchParams.get("dateTo") || "");
-
-
-
-
-
 
   const fetchEvents = useCallback(async (currentPage = 1, append = false) => {
     try {

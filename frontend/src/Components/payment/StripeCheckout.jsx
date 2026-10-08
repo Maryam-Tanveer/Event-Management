@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import axios from "axios";
+import axiosInstance from "../../api/axiosInstance";
 import toast from "react-hot-toast";
 import { Lock, CreditCard } from "lucide-react";
 
@@ -30,7 +30,7 @@ function StripeCheckout({ amount, onSuccess }) {
 
     try {
       // 1. Ask backend to create a PaymentIntent
-      const { data } = await axios.post("/api/payment/create-intent", { amount });
+      const { data } = await axiosInstance.post("/api/payment/create-intent", { amount });
 
       // 2. Confirm card payment on Stripe
       const result = await stripe.confirmCardPayment(data.clientSecret, {

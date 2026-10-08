@@ -3,19 +3,34 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ArrowRight, Star, Calendar, MapPin, Users, Shield, Sparkles, Music, Palette, Utensils, Briefcase } from "lucide-react";
 import logo from "../assets/logo.jpeg";
+import axiosInstance from "../api/axiosInstance";
 
-const categories = [
-  { icon: Music, label: "Music & Concerts" },
-  { icon: Palette, label: "Art & Exhibitions" },
-  { icon: Utensils, label: "Galas & Dinners" },
-  { icon: Briefcase, label: "Conferences" },
+// ✅ Static category icons mapping — sirf icons fixed hain, labels DB se aayenge
+const CATEGORY_ICONS = {
+  "Music & Concerts":      Music,
+  "Art & Exhibitions":     Palette,
+  "Gala & Dinners":        Utensils,
+  "Galas & Dinners":       Utensils,
+  "Conferences":           Briefcase,
+  "Conferences & Seminars": Briefcase,
+  "Weddings":              Sparkles,
+};
+const DEFAULT_ICON = Star;
+
+// ✅ Hardcoded categories hata di — ab DB se aayengi
+const FALLBACK_CATEGORIES = [
+  { label: "Music & Concerts" },
+  { label: "Art & Exhibitions" },
+  { label: "Galas & Dinners" },
+  { label: "Conferences" },
 ];
 
-const stats = [
-  { value: "500+", label: "Exclusive Events" },
-  { value: "12K+", label: "Happy Guests" },
-  { value: "200+", label: "Elite Organizers" },
-  { value: "4.9★", label: "Average Rating" },
+// ✅ Stats ke default values — jab tak API response nahi aata
+const DEFAULT_STATS = [
+  { value: "—",   label: "Exclusive Events" },
+  { value: "—",   label: "Happy Guests" },
+  { value: "—",   label: "Elite Organizers" },
+  { value: "—",   label: "Average Rating" },
 ];
 
 function LandingPage() {
@@ -46,6 +61,101 @@ function LandingPage() {
       }
     };
     fetchFeatured();
+  }, []);
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [featuredEvents, setFeaturedEvents] = useState([]);
+  const [eventsLoading, setEventsLoading]   = useState(true);
+
+  const [stats, setStats]       = useState(DEFAULT_STATS);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+
+  // ── Fetch featured events ─────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const { data } = await axiosInstance.get("/api/events", {
+          params: { featured: "true", limit: 3 },
+        });
+
+        if (data.events?.length > 0) {
+          setFeaturedEvents(
+            data.events.map((e) => ({
+              id:       e._id,
+              title:    e.title,
+              category: e.category,
+              date:     e.startDate,
+              location: e.venue,
+              price:    e.price === 0 ? "Free (RSVP)" : `From $${e.price}`,
+              image:    e.previewImage ||
+                "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=800&auto=format&fit=crop",
+              badge: e.tags?.[0]?.toUpperCase() || e.category?.toUpperCase() || "EVENT",
+            }))
+          );
+        }
+        // Agar DB mein featured events nahi — section chhupa do (empty array)
+      } catch {
+        // Silently hide featured section on error
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
+
+  // ── Fetch platform stats ──────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data } = await axiosInstance.get("/api/stats");
+        setStats([
+          {
+            value: data.totalEvents >= 1000
+              ? `${(data.totalEvents / 1000).toFixed(1)}K+`
+              : `${data.totalEvents}+`,
+            label: "Exclusive Events",
+          },
+          {
+            value: data.totalGuests >= 1000
+              ? `${(data.totalGuests / 1000).toFixed(1)}K+`
+              : `${data.totalGuests}+`,
+            label: "Happy Guests",
+          },
+          {
+            value: `${data.totalOrganizers}+`,
+            label: "Elite Organizers",
+          },
+          {
+            value: `${data.avgRating}★`,
+            label: "Average Rating",
+          },
+        ]);
+      } catch {
+        // Silently keep default dashes
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  // ── Fetch categories ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await axiosInstance.get("/api/events/categories");
+        // "All Events" hatao — landing page pe specific categories dikhao
+        const filtered = data.filter((c) => c && c !== "All Events").slice(0, 4);
+        if (filtered.length > 0) {
+          setCategories(filtered.map((label) => ({ label })));
+        }
+      } catch {
+        // Keep fallback categories
+      }
+    };
+    fetchCategories();
   }, []);
 
   return (
@@ -82,7 +192,6 @@ function LandingPage() {
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1600')" }}
         />
         <div className="absolute inset-0 bg-[#2d1a0e]/65" />
-
         <div className="relative max-w-6xl mx-auto px-6 py-28 md:py-40 text-center text-white">
           <span className="inline-block text-[11px] tracking-[0.25em] font-bold text-[#d4a853] uppercase mb-4 border border-[#d4a853]/40 px-4 py-1.5 rounded-full">
             ✦ Private Members Portal
@@ -112,12 +221,14 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ── STATS ── */}
+      {/* ── STATS — Real numbers from DB ── */}
       <section className="bg-[#3d1823] py-10">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {stats.map((s) => (
             <div key={s.label}>
-              <p className="text-3xl font-serif font-bold text-[#d4a853]">{s.value}</p>
+              <p className={`text-3xl font-serif font-bold text-[#d4a853] transition-all ${statsLoading ? "opacity-40" : ""}`}>
+                {s.value}
+              </p>
               <p className="text-white/70 text-sm mt-1">{s.label}</p>
             </div>
           ))}
@@ -134,27 +245,11 @@ function LandingPage() {
           Whether you're an attendee seeking exclusive cultural experiences, or an organizer
           curating the season's most talked-about events — LuxeEvents is built for you.
         </p>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            {
-              icon: "🎫",
-              title: "Attendees",
-              desc: "Browse and book tickets to exclusive galas, art shows, culinary experiences, and private summits. Your next unforgettable memory is one click away.",
-              cta: "Join as Attendee",
-            },
-            {
-              icon: "🏛️",
-              title: "Organizers",
-              desc: "Create and publish your curated events with full control over ticketing, guest lists, venue details, and media. Build your legacy.",
-              cta: "Join as Organizer",
-            },
-            {
-              icon: "⭐",
-              title: "Members Only",
-              desc: "All events on LuxeEvents are curated for quality. Members enjoy early access, VIP pricing, and exclusive invitations.",
-              cta: "Learn More",
-            },
+            { icon: "🎫", title: "Attendees",    desc: "Browse and book tickets to exclusive galas, art shows, culinary experiences, and private summits. Your next unforgettable memory is one click away.",    cta: "Join as Attendee" },
+            { icon: "🏛️", title: "Organizers",   desc: "Create and publish your curated events with full control over ticketing, guest lists, venue details, and media. Build your legacy.",                        cta: "Join as Organizer" },
+            { icon: "⭐", title: "Members Only", desc: "All events on LuxeEvents are curated for quality. Members enjoy early access, VIP pricing, and exclusive invitations.",                                     cta: "Learn More" },
           ].map((card) => (
             <div
               key={card.title}
@@ -182,7 +277,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ── EVENT CATEGORIES ── */}
+      {/* ── EVENT CATEGORIES — DB se ── */}
       <section className="bg-white py-16">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -192,75 +287,76 @@ function LandingPage() {
             </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map(({ icon: Icon, label }) => (
-              <button
-                key={label}
-                onClick={() => navigate("/create-account")}
-                className="flex flex-col items-center gap-3 p-6 bg-[#FBF3EC] rounded-2xl border border-[#ede5dc] hover:border-[#b8862f] hover:bg-[#f5eee3] transition-all group"
+            {categories.map(({ label }) => {
+              const Icon = CATEGORY_ICONS[label] || DEFAULT_ICON;
+              return (
+                <button
+                  key={label}
+                  onClick={() => navigate("/events", { state: { category: label } })}
+                  className="flex flex-col items-center gap-3 p-6 bg-[#FBF3EC] rounded-2xl border border-[#ede5dc] hover:border-[#b8862f] hover:bg-[#f5eee3] transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-[#3d1823] flex items-center justify-center group-hover:bg-[#b8862f] transition-colors">
+                    <Icon size={20} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-[#3d2a2a]">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURED EVENTS — DB se ── */}
+      {!eventsLoading && featuredEvents.length > 0 && (
+        <section className="max-w-6xl mx-auto px-6 py-20">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <span className="text-xs tracking-[0.2em] font-semibold text-[#b8862f] uppercase">Upcoming</span>
+              <h2 className="font-serif text-3xl md:text-4xl text-[#2d1a0e] font-bold mt-2">Featured Events</h2>
+            </div>
+            <button
+              onClick={() => navigate("/events")}
+              className="text-sm font-semibold text-[#b8862f] hover:text-[#8b5e1a] flex items-center gap-1 transition-colors"
+            >
+              View All <ArrowRight size={14} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featuredEvents.map((event) => (
+              <div
+                key={event.id}
+                className="bg-white rounded-2xl overflow-hidden border border-[#ede5dc] shadow-sm hover:shadow-lg transition-all group cursor-pointer"
+                onClick={() => navigate("/signin")}
               >
-                <div className="w-12 h-12 rounded-full bg-[#3d1823] flex items-center justify-center group-hover:bg-[#b8862f] transition-colors">
-                  <Icon size={20} className="text-white" />
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={event.image}
+                    alt={event.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <span className="absolute top-3 left-3 bg-[#3d1823] text-white text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full">
+                    {event.badge}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-[#3d2a2a]">{label}</span>
-              </button>
+                <div className="p-5">
+                  <h3 className="font-serif text-lg font-bold text-[#3d2a2a] mb-2 leading-tight">{event.title}</h3>
+                  <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-1">
+                    <Calendar size={12} /> {event.date}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-4">
+                    <MapPin size={12} /> {event.location}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-[#3d2a2a]">{event.price}</span>
+                    <span className="text-xs text-[#b8862f] font-semibold">Sign in to book →</span>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── FEATURED EVENTS ── */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <span className="text-xs tracking-[0.2em] font-semibold text-[#b8862f] uppercase">Upcoming</span>
-            <h2 className="font-serif text-3xl md:text-4xl text-[#2d1a0e] font-bold mt-2">
-              Featured Events
-            </h2>
-          </div>
-          <button
-            onClick={() => navigate("/create-account")}
-            className="text-sm font-semibold text-[#b8862f] hover:text-[#8b5e1a] flex items-center gap-1 transition-colors"
-          >
-            View All <ArrowRight size={14} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {featuredEvents.map((event) => (
-            <div
-              key={event.id}
-              className="bg-white rounded-2xl overflow-hidden border border-[#ede5dc] shadow-sm hover:shadow-lg transition-all group cursor-pointer"
-              onClick={() => navigate("/tickets", { state: { eventId: event.id } })}
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={event.image}
-                  alt={event.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <span className="absolute top-3 left-3 bg-[#3d1823] text-white text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full">
-                  {event.badge}
-                </span>
-              </div>
-              <div className="p-5">
-                <h3 className="font-serif text-lg font-bold text-[#3d2a2a] mb-2 leading-tight">
-                  {event.title}
-                </h3>
-                <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-1">
-                  <Calendar size={12} /> {event.date}
-                </div>
-                <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-4">
-                  <MapPin size={12} /> {event.location}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-[#3d2a2a]">{event.price}</span>
-                  <span className="text-xs text-[#b8862f] font-semibold">Sign in to book →</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── WHY LUXEEVENTS ── */}
       <section className="bg-[#3d1823] py-20">
@@ -271,9 +367,9 @@ function LandingPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: Shield, title: "Verified Events", desc: "Every event is verified by our curatorial team for quality and authenticity." },
-              { icon: Star, title: "VIP Experience", desc: "Priority seating, exclusive lounges, and complimentary welcome receptions." },
-              { icon: Users, title: "Elite Network", desc: "Connect with cultural patrons, artists, leaders, and innovators worldwide." },
+              { icon: Shield, title: "Verified Events",  desc: "Every event is verified by our curatorial team for quality and authenticity." },
+              { icon: Star,   title: "VIP Experience",   desc: "Priority seating, exclusive lounges, and complimentary welcome receptions." },
+              { icon: Users,  title: "Elite Network",    desc: "Connect with cultural patrons, artists, leaders, and innovators worldwide." },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="text-center">
                 <div className="w-14 h-14 rounded-full bg-[#d4a853]/20 flex items-center justify-center mx-auto mb-4">
@@ -319,7 +415,9 @@ function LandingPage() {
             <img className="w-8 h-8 rounded-md object-cover" src={logo} alt="logo" />
             <span className="font-bold text-[#3d2a2a]">LuxeEvents</span>
           </div>
-          <p className="text-xs text-[#a09080]">© {new Date().getFullYear()} LuxeEvents. All rights reserved. Crafted with precision.</p>
+          <p className="text-xs text-[#a09080]">
+            © {new Date().getFullYear()} LuxeEvents. All rights reserved. Crafted with precision.
+          </p>
           <div className="flex gap-6 text-xs text-[#7a6a6a]">
             <a href="/" className="hover:text-[#3d2a2a]">Privacy</a>
             <a href="/" className="hover:text-[#3d2a2a]">Terms</a>

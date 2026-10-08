@@ -13,7 +13,8 @@ const ticketRoutes = require("./routes/ticketRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const promoRoutes = require("./routes/promoRoutes");
-const newsletterRoutes = require("./routes/newsletterRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const statsRoutes  = require("./routes/statsRoutes");
 
 if (process.env.NODE_ENV !== "test") {
   connectDB();
@@ -49,10 +50,13 @@ app.use(helmet());
 // Agar FRONTEND_URL .env mein set nahi hai toh localhost:3000 fallback use hoga
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:3000",
+  "https://event-management-k439.vercel.app", // Live frontend
   "http://127.0.0.1:3000",
+  "http://localhost:3000",
   "http://localhost:5173", // Vite default
   "http://127.0.0.1:5173"
 ];
+
 
 app.use(
   cors({
@@ -129,8 +133,9 @@ app.use("/api/events", generalLimiter, eventRoutes);
 app.use("/api/tickets", generalLimiter, ticketRoutes);
 app.use("/api/upload", generalLimiter, uploadRoutes);
 app.use("/api/payment", generalLimiter, paymentRoutes);
-app.use("/api/promo", generalLimiter, promoRoutes);
-app.use("/api/newsletter", generalLimiter, newsletterRoutes);
+app.use("/api/promo",    generalLimiter, promoRoutes);
+app.use("/api/reviews",  generalLimiter, reviewRoutes);
+app.use("/api/stats",    generalLimiter, statsRoutes);
 
 // ─── 7. Global Error Handler ─────────────────────────────────────────────────
 // Koi bhi unhandled error yahan aayega — stack trace leak nahi hogi production mein

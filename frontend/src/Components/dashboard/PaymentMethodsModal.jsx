@@ -3,10 +3,9 @@ import { X, CreditCard, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
 function PaymentMethodsModal({ onClose }) {
-  const [cards, setCards] = useState([
-    { id: 1, type: "Visa", last4: "4242", exp: "12/28", isDefault: true },
-    { id: 2, type: "Mastercard", last4: "5555", exp: "08/27", isDefault: false },
-  ]);
+  // ✅ Empty by default — real cards Stripe API se aayenge
+  // Future: axiosInstance.get("/api/payment/methods") se fetch karo
+  const [cards, setCards] = useState([]);
 
   const handleAddCard = () => {
     toast.success("Add new card flow will open here.");

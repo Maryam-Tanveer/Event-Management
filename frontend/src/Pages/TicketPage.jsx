@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useLocation, useNavigate, useSearchParams, useParams } from "react-router-dom";
+import React from "react";
+import axiosInstance from "../api/axiosInstance";
+import { useLocation, useNavigate } from "react-router-dom";
+import { mockEvents } from "../data/mockEvents";
 import EventGallery from "../Components/tickets/EventGallery";
 import EventDescription from "../Components/tickets/EventDescription";
 import EventAgenda from "../Components/tickets/EventAgenda";
@@ -8,13 +9,12 @@ import FeaturedGuests from "../Components/tickets/FeaturedGuests";
 import VenueLocation from "../Components/tickets/VenueLocation";
 import ReviewsSection from "../Components/tickets/ReviewsSection";
 import TicketSidebar from "../Components/tickets/TicketSidebar";
+import { useState, useEffect } from "react";
 
 const TicketPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { id: routeId } = useParams();
-  const [searchParams] = useSearchParams();
-  const eventIdParam = location.state?.eventId || searchParams.get("id") || routeId;
+  const eventId = location.state?.eventId || 1;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,78 +22,62 @@ const TicketPage = () => {
 
   useEffect(() => {
     const fetchEvent = async () => {
+      // Mock fallback — sirf numeric IDs ke liye
+      const mockEvent = mockEvents.find((e) => e.id.toString() === eventId.toString());
+      if (mockEvent) {
+        setEvent(mockEvent);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
+        const { data } = await axiosInstance.get(`/api/events/${eventId}`);
 
-        let targetId = eventIdParam;
-
-        // If no eventId specified (e.g. direct visit to /tickets), fetch the latest real event from DB
-        if (!targetId) {
-          try {
-            const { data } = await axios.get("/api/events?limit=1");
-            if (data.events && data.events.length > 0) {
-              targetId = data.events[0]._id;
-            }
-          } catch (e) {
-            console.warn("Could not fetch latest event for /tickets fallback", e);
-          }
-        }
-
-        if (!targetId) {
-          setError("No events are currently scheduled.");
-          setLoading(false);
-          return;
-        }
-
-        const { data } = await axios.get(`/api/events/${targetId}`);
-
-        // Backend ka structure frontend components ke liye map karo
+        // ✅ Backend ka response map karo — including new dynamic fields
         const mappedEvent = {
-          id: data._id,
-          title: data.title,
-          category: data.category || "All Events",
-          badge: data.tags?.[0] || "EVENT",
-          image:
-            data.previewImage ||
+          id:          data._id,
+          title:       data.title,
+          category:    data.category || "All Events",
+          badge:       data.tags?.[0] || "EVENT",
+          image:       data.previewImage ||
             "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
           galleryImages: data.galleryImages || [],
-          date: data.startDate,
-          time: data.startTime,
-          venue: data.venue,
-          location: data.city ? `${data.venue}, ${data.city}` : data.venue,
-          address: data.address,
-          city: data.city || "",
-          coordinates: data.coordinates || null,
-          format: data.format || "In-Person",
-          streamUrl: data.streamUrl || "",
-          priceLabel: data.price === 0 ? "Free" : `$${data.price}`,
-          price: data.price || 0,
+          date:        data.startDate,
+          time:        data.startTime,
+          location:    data.venue,
+          address:     data.address,
+          latitude:    data.latitude ?? null,
+          longitude:   data.longitude ?? null,
+          priceLabel:  data.price === 0 ? "Free" : `$${data.price}`,
+          price:       data.price || 0,
           description: data.synopsis,
-          organizer: data.organizer,
-          agenda: data.agenda || "",
-          selectedTier: data.selectedTier || "",
-          tierDetails: data.tierDetails || "",
+          organizer:   data.organizer,
+          // ✅ New dynamic fields
+          agendaSlots: data.agendaSlots  || [],
+          guests:      data.guests       || [],
+          amenities:   data.amenities    || [],
+          maxTickets:  data.maxTickets   ?? null,
+          avgRating:   data.avgRating    || 0,
+          reviewCount: data.reviewCount  || 0,
         };
         setEvent(mappedEvent);
       } catch (err) {
         console.error("Failed to fetch event:", err);
-        if (err.response?.status === 404) {
+        if (err.response?.status === 404)
           setError("This event could not be found.");
-        } else if (err.response?.status === 400) {
+        else if (err.response?.status === 400)
           setError("Invalid event link.");
-        } else {
+        else
           setError("Failed to load event. Please check your connection and try again.");
-        }
       } finally {
         setLoading(false);
       }
     };
-
     fetchEvent();
   }, [eventIdParam]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FBF3EC] flex items-center justify-center">
@@ -105,7 +89,6 @@ const TicketPage = () => {
     );
   }
 
-  // Error state — event nahi mila ya invalid ID
   if (error || !event) {
     return (
       <div className="min-h-screen bg-[#FBF3EC] flex flex-col items-center justify-center gap-4">
@@ -126,17 +109,23 @@ const TicketPage = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-          {/* Left Column — Event content */}
+          {/* Left Column */}
           <div className="lg:col-span-2 space-y-10">
             <EventGallery event={event} />
             <EventDescription event={event} />
-            <EventAgenda event={event} />
-            <FeaturedGuests event={event} />
+
+            {/* ✅ Props pass ho rahe hain — hardcoded nahi */}
+            <EventAgenda  agendaSlots={event.agendaSlots} />
+            <FeaturedGuests guests={event.guests} />
             <VenueLocation event={event} />
-            <ReviewsSection event={event} />
+            <ReviewsSection
+              eventId={event.id}
+              avgRating={event.avgRating}
+              reviewCount={event.reviewCount}
+            />
           </div>
 
-          {/* Right Column — Ticket purchase sidebar */}
+          {/* Right Column */}
           <div className="lg:col-span-1">
             <TicketSidebar event={event} />
           </div>
