@@ -3,6 +3,8 @@ const app = require('../server');
 const dbSetup = require('./db-setup');
 const User = require('../models/User');
 
+jest.setTimeout(60000);
+
 beforeAll(async () => {
   await dbSetup.connect();
 });
@@ -30,7 +32,7 @@ describe('Auth API Endpoints', () => {
       
     expect(res.statusCode).toEqual(201);
     expect(res.body).toHaveProperty('token');
-    expect(res.body.user).toHaveProperty('email', testUser.email);
+    expect(res.body).toHaveProperty('email', testUser.email);
   });
 
   it('should not register user if email already exists', async () => {

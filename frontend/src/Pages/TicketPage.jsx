@@ -76,7 +76,7 @@ const TicketPage = () => {
       }
     };
     fetchEvent();
-  }, [eventId, navigate]);
+  }, [eventIdParam]);
 
   if (loading) {
     return (

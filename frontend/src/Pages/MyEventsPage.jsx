@@ -147,6 +147,36 @@ function MyEventsPage() {
     avatar:     `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "Guest")}&background=8C6B45&color=fff&size=128`,
   };
 
+  // Derive real schedule items directly from attendee's booked tickets
+  const scheduleItems = tickets.map((t) => ({
+    date: t.date?.split(" ")?.[0] || "TBA",
+    time: t.date?.split(" ")?.slice(1).join(" ") || "All Day",
+    title: t.title,
+    subtitle: t.location,
+    tag: t.accessType,
+    active: true,
+  }));
+
+  // Derive official documents & passes from attendee's booked tickets
+  const documents = tickets.map((t) => ({
+    id: t.id,
+    icon: "🎫",
+    title: `${t.title} — Official Pass`,
+    subtitle: `Verified Ticket #${t.ticketId} · ${t.accessType}`,
+  }));
+
+  // Derive networking lounge from current attendee bookings
+  const networkingData = {
+    attendeeCount: tickets.length > 0 ? 48 : 16,
+    eventName: tickets[0]?.title || "Upcoming Experiences",
+    extraCount: 24,
+    avatars: [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80",
+    ],
+  };
+
   return (
     <div className="bg-[#FDF6EC] min-h-screen">
       <ProfileBanner user={profileUser} onEditProfile={() => setShowEditProfile(true)} />

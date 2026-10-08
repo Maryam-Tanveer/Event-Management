@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 function MultipleImageUploader({ values, onChange }) {
   const [uploading, setUploading] = useState(false);
@@ -33,13 +34,29 @@ function MultipleImageUploader({ values, onChange }) {
 
       const newImages = [];
       for (const file of validFiles) {
-        const dataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        newImages.push(dataUrl);
+        let uploadedUrl = null;
+        try {
+          const formData = new FormData();
+          formData.append("image", file);
+          const { data } = await axios.post("/api/upload", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          if (data?.url) {
+            uploadedUrl = data.url;
+          }
+        } catch (cdnErr) {
+          console.warn("Backend CDN upload skipped/failed for image, using reader fallback");
+        }
+
+        if (!uploadedUrl) {
+          uploadedUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
+        newImages.push(uploadedUrl);
       }
 
       onChange([...(values || []), ...newImages]);

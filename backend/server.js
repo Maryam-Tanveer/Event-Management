@@ -16,7 +16,9 @@ const promoRoutes = require("./routes/promoRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const statsRoutes  = require("./routes/statsRoutes");
 
-connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
 const app = express();
 
@@ -59,13 +61,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow if no origin (e.g. Postman) or if it's in the allowed list
-      // Also allow any localhost/127.0.0.1 origin in development to prevent 403s
-      if (
-        !origin || 
-        allowedOrigins.includes(origin) || 
-        (process.env.NODE_ENV !== "production" && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")))
-      ) {
+      // Allow if no origin (e.g. Postman, mobile) or if it's in the allowed list
+      // Also allow any localhost/127.0.0.1 origin or any vercel.app domain
+      const isVercel = origin && (origin.endsWith(".vercel.app") || origin.includes("vercel.app"));
+      const isLocal = origin && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:"));
+
+      if (!origin || allowedOrigins.includes(origin) || isVercel || isLocal) {
         callback(null, true);
       } else {
         console.error(`CORS Error: Origin ${origin} is not allowed.`);
@@ -111,6 +112,18 @@ app.get("/", (req, res) => {
   res.json({ status: "ok", message: "LuxeEvents API is running..." });
 });
 
+// Ensure DB is connected before handling any API route in serverless environments
+app.use(async (req, res, next) => {
+  if (process.env.NODE_ENV !== "test") {
+    try {
+      await connectDB();
+    } catch (err) {
+      return res.status(500).json({ message: "Database connection failed", error: err.message });
+    }
+  }
+  next();
+});
+
 // ─── 6. Routes ───────────────────────────────────────────────────────────────
 // Auth routes pe strict limiter — brute force protection
 app.use("/api/auth", authLimiter, authRoutes);
@@ -144,9 +157,11 @@ app.use((err, req, res, next) => {
 
 // ─── 8. Start Server ─────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== "test") { app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔒 CORS allowed origin: ${allowedOrigins.join(", ")}`);
-});
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🔒 CORS allowed origin: ${allowedOrigins.join(", ")}`);
+  });
+}
 
-}; module.exports = app;
+module.exports = app;

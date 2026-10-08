@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 function ImageUploader({ value, onChange }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef();
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -22,12 +23,31 @@ function ImageUploader({ value, onChange }) {
 
     try {
       setUploading(true);
-      toast.loading("Processing image...", { id: "img-upload" });
-      
+      toast.loading("Uploading image...", { id: "img-upload" });
+
+      // First attempt CDN upload via backend /api/upload
+      try {
+        const formData = new FormData();
+        formData.append("image", file);
+        const { data } = await axios.post("/api/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (data?.url) {
+          onChange(data.url);
+          toast.success("Image uploaded to CDN!", { id: "img-upload" });
+          setUploading(false);
+          return;
+        }
+      } catch (cdnErr) {
+        console.warn("Backend CDN upload skipped/failed, using local reader fallback:", cdnErr.message);
+      }
+
+      // Fallback: local data URL for offline or unconfigured Cloudinary
       const reader = new FileReader();
       reader.onloadend = () => {
         onChange(reader.result);
-        toast.success("Image uploaded!", { id: "img-upload" });
+        toast.success("Image attached successfully!", { id: "img-upload" });
         setUploading(false);
       };
       reader.readAsDataURL(file);

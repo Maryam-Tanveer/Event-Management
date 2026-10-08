@@ -16,19 +16,17 @@ function Navbar() {
     navLinks = [
       { label: "Discovery", path: "/" },
       { label: "My Events", path: "/my-events" },
-      { label: "Organize", path: "/organize" },
+      { label: "Curate Event", path: "/organize" },
     ];
   } else if (user?.role === "attendee") {
     navLinks = [
       { label: "Discovery", path: "/" },
-      { label: "Tickets", path: "/tickets" },
       { label: "My Tickets", path: "/my-events" },
     ];
   } else {
     navLinks = [
       { label: "Discovery", path: "/" },
-      { label: "Tickets", path: "/tickets" },
-      { label: "Organize", path: "/organize" },
+      { label: "Join as Organizer", path: "/create-account" },
     ];
   }
 
@@ -59,6 +57,7 @@ function Navbar() {
   const handleLogout = () => {
     logout();
     setMenuOpen(false);
+    setMobileNavOpen(false);
     navigate("/signin");
   };
 
@@ -69,7 +68,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-[#fdf1ea] border-b border-[#e5ddd5]">
+    <nav className="w-full bg-[#fdf1ea] border-b border-[#e5ddd5] sticky top-0 z-40">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2">
           <img className="w-12 h-12 rounded-md object-cover" src={logo} alt="logo" />
@@ -96,7 +95,8 @@ function Navbar() {
           })}
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right Section: User / Auth + Mobile Hamburger */}
+        <div className="flex items-center gap-3">
           {user ? (
             <div className="relative" ref={menuRef}>
               <button

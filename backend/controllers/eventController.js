@@ -1,4 +1,5 @@
 const Event = require("../models/Event");
+const Ticket = require("../models/Ticket");
 const mongoose = require("mongoose");
 const { geocodeVenueAddress, fetchFromNominatim } = require("../utils/geocoder");
 
@@ -249,7 +250,7 @@ const updateEvent = async (req, res) => {
     const {
       title, synopsis, category, price, tags,
       startDate, startTime, endDate, endTime,
-      timezone, format, venue, address, streamUrl,
+      timezone, format, venue, address, city, coordinates, streamUrl,
       previewImage, galleryImages, selectedTier, tierDetails,
       agendaSlots, guests, amenities, maxTickets,
       promoVideo, privacy, latitude, longitude,
@@ -350,6 +351,8 @@ const deleteEvent = async (req, res) => {
     if (event.organizer.toString() !== req.user._id.toString())
       return res.status(403).json({ message: "Not authorized. You can only delete your own events." });
 
+    // Cascade delete associated tickets so attendees do not have dangling broken tickets
+    await Ticket.deleteMany({ event: req.params.id });
     await event.deleteOne();
     res.json({ message: "Event deleted successfully.", deletedId: req.params.id });
   } catch (error) {

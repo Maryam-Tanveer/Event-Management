@@ -1,13 +1,19 @@
 const Ticket = require("../models/Ticket");
 const Event = require("../models/Event");
-// Stripe ko initialize karo — secret key .env se aayegi
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+// Stripe ko initialize karo — fallback placeholder avoids process crash during tests
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder");
+
+const PROMO_RATES = {
+  LUXE10: 0.10,
+  GALA20: 0.20,
+  WELCOME: 0.15,
+};
 
 // @route  POST /api/tickets (protected)
 // @desc   Ticket purchase karo — payment verify karke hi ticket banega
 const purchaseTicket = async (req, res) => {
   try {
-    const { eventId, ticketType, quantity, paymentIntentId } = req.body;
+    const { eventId, ticketType, quantity, paymentIntentId, promoCode } = req.body;
 
     // --- Step 1: Basic input validation ---
     if (!eventId || !ticketType || !quantity || !paymentIntentId) {
@@ -26,10 +32,7 @@ const purchaseTicket = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // --- Step 3: Stripe se payment VERIFY karo (most important step) ---
-    // Hum Stripe ke server se puchh rahe hain: "Ye paymentIntentId valid hai?
-    // Aur payment actually succeed hua?"
-    // Client kabhi bhi fake paymentIntentId bhej sakta tha — ye check usse rokta hai
+    // --- Step 3: Stripe se payment VERIFY karo ---
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (!paymentIntent || paymentIntent.status !== "succeeded") {
@@ -38,15 +41,14 @@ const purchaseTicket = async (req, res) => {
       });
     }
 
-    // --- Step 4: Ye bhi verify karo ki payment kisi aur ke account ke liye toh nahi ---
-    // paymentIntent mein humne userId metadata store kiya tha (paymentRoutes.js mein)
+    // --- Step 4: Verify payment intent user ---
     if (paymentIntent.metadata?.userId !== req.user._id.toString()) {
       return res.status(403).json({
         message: "Payment intent does not belong to this user.",
       });
     }
 
-    // --- Step 5: Duplicate ticket check — ek hi payment se 2 tickets na ban jayein ---
+    // --- Step 5: Duplicate ticket check ---
     const existingTicket = await Ticket.findOne({ paymentIntentId });
     if (existingTicket) {
       return res.status(409).json({
@@ -54,10 +56,25 @@ const purchaseTicket = async (req, res) => {
       });
     }
 
-    // --- Step 6: totalAmount BACKEND mein calculate karo ---
-    // Client ki totalAmount bilkul ignore — chahe koi 0 bheje, hum event ke real price se
-    // calculate karenge. Ye price manipulation attack rokta hai.
-    const totalAmount = Number((event.price * quantity).toFixed(2));
+    // --- Step 6: Pricing calculation with VIP and Promo Code support ---
+    const isVip = ticketType.toLowerCase().includes("vip");
+    const unitPrice = isVip
+      ? Math.round(event.price * 1.8 * 100) / 100
+      : Number(event.price) || 0;
+    const subtotal = Number((unitPrice * quantity).toFixed(2));
+
+    let discountAmount = 0;
+    let appliedPromo = null;
+    if (promoCode && typeof promoCode === "string") {
+      const normalizedCode = promoCode.trim().toUpperCase();
+      const rate = PROMO_RATES[normalizedCode] || 0;
+      if (rate > 0) {
+        appliedPromo = normalizedCode;
+        discountAmount = Number((subtotal * rate).toFixed(2));
+      }
+    }
+
+    const totalAmount = Math.max(0, Number((subtotal - discountAmount).toFixed(2)));
 
     // --- Step 7: Ticket create karo ---
     const ticket = await Ticket.create({
@@ -65,18 +82,19 @@ const purchaseTicket = async (req, res) => {
       user: req.user._id,
       ticketType,
       quantity,
-      totalAmount,       // backend calculated ✅
-      paymentIntentId,   // stored for records ✅
+      totalAmount,
+      discountAmount,
+      promoCode: appliedPromo,
+      paymentIntentId,
     });
 
     const populatedTicket = await ticket.populate(
       "event",
-      "title previewImage venue startDate startTime"
+      "title previewImage venue startDate startTime city coordinates"
     );
 
     res.status(201).json(populatedTicket);
   } catch (error) {
-    // Mongoose duplicate key error (paymentIntentId unique constraint)
     if (error.code === 11000) {
       return res.status(409).json({ message: "Ticket already issued for this payment." });
     }
@@ -117,6 +135,8 @@ const registerFreeTicket = async (req, res) => {
       return res.status(409).json({ message: "You are already registered for this event." });
     }
 
+    const freeRef = `free_${Date.now()}_${req.user._id}_${Math.random().toString(36).substring(2, 8)}`;
+
     const ticket = await Ticket.create({
       event: eventId,
       user: req.user._id,
@@ -124,16 +144,19 @@ const registerFreeTicket = async (req, res) => {
       quantity,
       totalAmount: 0,       // free hai
       isFreeTicket: true,   // flag set karo
-      // paymentIntentId intentionally absent for free tickets
+      paymentIntentId: freeRef, // unique reference to prevent null-index collisions
     });
 
     const populatedTicket = await ticket.populate(
       "event",
-      "title previewImage venue startDate startTime"
+      "title previewImage venue address city coordinates startDate startTime"
     );
 
     res.status(201).json(populatedTicket);
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "You are already registered for this event." });
+    }
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -143,7 +166,7 @@ const registerFreeTicket = async (req, res) => {
 const getMyTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find({ user: req.user._id })
-      .populate("event", "title previewImage venue startDate startTime")
+      .populate("event", "title previewImage venue address city coordinates startDate startTime")
       .sort({ createdAt: -1 });
 
     res.json(tickets);

@@ -8,7 +8,7 @@ function EventAgenda({ agendaSlots = [] }) {
   if (!agendaSlots || agendaSlots.length === 0) return null;
 
   return (
-    <div className="bg-[#f0e6dc] p-8 rounded-xl">
+    <div className="bg-[#f0e6dc] p-8 rounded-xl shadow-sm border border-[#e8dcd0]">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-serif text-[#3d2a2a]">Event Agenda</h2>
         {agendaSlots.some((s) => s.sessions?.length > 1) && (
