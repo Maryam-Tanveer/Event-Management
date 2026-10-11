@@ -2,6 +2,7 @@ const Review = require("../models/Review");
 const Event = require("../models/Event");
 const Ticket = require("../models/Ticket");
 const mongoose = require("mongoose");
+const { serverError } = require("../utils/errorResponse");
 
 // ─── Helper: Event ki avgRating aur reviewCount update karo ──────────────────
 const updateEventRating = async (eventId) => {
@@ -43,7 +44,7 @@ const getReviews = async (req, res) => {
 
     res.json(reviews);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -93,7 +94,7 @@ const createReview = async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({ message: "You have already reviewed this event." });
     }
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 

@@ -1,4 +1,5 @@
 import ProtectedRoute from "./Components/ProtectedRoute";
+import ErrorBoundary from "./Components/ErrorBoundary";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import Footer from "./Components/Footer";
@@ -12,6 +13,7 @@ import SignInPage from "./Pages/SignInPage";
 import ForgotPasswordPage from "./Pages/ForgotPasswordPage";
 import ResetPasswordPage from "./Pages/ResetPasswordPage";
 import CreateAccountPage from "./Pages/CreateAccountPage";
+import NotFoundPage from "./Pages/NotFoundPage";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/AuthContext";
 
@@ -36,78 +38,67 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-      {!hideLayout && <Navbar />}
-      <main className="flex-1">
-        <Routes>
-          {/* Root: LandingPage for guests, EventPage for logged-in users */}
-          <Route
-            path="/"
-            element={
-              user ? (
-                <EventPage />
-              ) : (
-                <LandingPage />
-              )
-            }
-          />
+    <ErrorBoundary>
+      <div className="flex flex-col min-h-screen">
+        <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+        {!hideLayout && <Navbar />}
+        <main className="flex-1">
+          <Routes>
+            {/* Root: LandingPage for guests, EventPage for logged-in users */}
+            <Route
+              path="/"
+              element={
+                user ? (
+                  <EventPage />
+                ) : (
+                  <LandingPage />
+                )
+              }
+            />
 
-          <Route path="/events" element={<EventPage />} />
-          <Route path="/tickets" element={<TicketPage />} />
-          <Route path="/tickets/:id" element={<TicketPage />} />
+            <Route path="/events" element={<EventPage />} />
+            <Route path="/tickets" element={<TicketPage />} />
+            <Route path="/tickets/:id" element={<TicketPage />} />
 
-          <Route
-            path="/my-events"
-            element={
-              <ProtectedRoute>
-                <MyEventsPage />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/my-events"
+              element={
+                <ProtectedRoute>
+                  <MyEventsPage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/organize"
-            element={
-              <ProtectedRoute>
-                <OrganizePage />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/organize"
+              element={
+                <ProtectedRoute>
+                  <OrganizePage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/organize/edit/:eventId"
-            element={
-              <ProtectedRoute>
-                <OrganizePage />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/organize/edit/:eventId"
+              element={
+                <ProtectedRoute>
+                  <OrganizePage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/signin" element={<SignInPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/create-account" element={<CreateAccountPage />} />
+            <Route path="/signin" element={<SignInPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/create-account" element={<CreateAccountPage />} />
 
-          <Route
-            path="*"
-            element={
-              <div className="min-h-screen bg-[#FBF3EC] flex flex-col items-center justify-center gap-4">
-                <h1 className="text-6xl font-serif font-bold text-[#2d1a0e]">404</h1>
-                <p className="text-[#6b4c3b] text-lg">This page does not exist.</p>
-                <a
-                  href="/"
-                  className="mt-2 px-6 py-2.5 bg-[#8b2d3a] text-white rounded-full text-sm font-semibold hover:bg-[#6d2330] transition-colors"
-                >
-                  Back to Home
-                </a>
-              </div>
-            }
-          />
-        </Routes>
-      </main>
-      {!hideLayout && <Footer />}
-    </div>
+            {/* 404 — Dedicated page instead of inline JSX */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </main>
+        {!hideLayout && <Footer />}
+      </div>
+    </ErrorBoundary>
   );
 }
 

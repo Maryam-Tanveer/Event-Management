@@ -4,6 +4,7 @@ import EventHero from "../Components/events/EventHero";
 import Sidebar from "../Components/events/Sidebar";
 import EventsHeader from "../Components/events/EventsHeader";
 import EventsGrid from "../Components/events/EventsGrid";
+import { EventsGridSkeleton } from "../Components/events/EventSkeleton";
 import axiosInstance from "../api/axiosInstance";
 
 const PRICE_MAP = {
@@ -196,10 +197,7 @@ function EventPage() {
             )}
 
             {loading && events.length === 0 ? (
-              <div className="text-center text-stone-500 py-16 flex flex-col items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#8b2d3a] border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-sm">Finding events...</p>
-              </div>
+              <EventsGridSkeleton count={6} />
             ) : (
               <EventsGrid
                 events={events}

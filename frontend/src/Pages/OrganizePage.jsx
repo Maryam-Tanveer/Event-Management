@@ -11,7 +11,7 @@ import DestinationSection from "../Components/organize/DestinationSection";
 import LivePreviewSidebar from "../Components/organize/LivePreviewSidebar";
 import ImageUploader from "../Components/organize/ImageUploader";
 import MultipleImageUploader from "../Components/organize/MultipleImageUploader";
-import { organizeDefaults } from "../data/mockEvents";
+import { organizeDefaults } from "../data/constants";
 
 const DRAFT_KEY = "organizeDraft";
 

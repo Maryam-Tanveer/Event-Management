@@ -2,6 +2,8 @@ const Event = require("../models/Event");
 const Ticket = require("../models/Ticket");
 const mongoose = require("mongoose");
 const { geocodeVenueAddress, fetchFromNominatim } = require("../utils/geocoder");
+const { invalidateStatsCache } = require("./statsController");
+const { serverError } = require("../utils/errorResponse");
 
 // Helper: User input ke regex special characters escape karo
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -78,8 +80,10 @@ const createEvent = async (req, res) => {
     });
 
     res.status(201).json(event);
+    // Stats cache invalidate karo — new event add hua
+    invalidateStatsCache();
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -174,7 +178,7 @@ const getEvents = async (req, res) => {
       hasMore: page * limit < totalCount,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -187,7 +191,7 @@ const getCategories = async (req, res) => {
     const sorted = ["All Events", ...categories.filter((c) => c && c !== "All Events").sort()];
     res.json(sorted);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -221,7 +225,7 @@ const getEventById = async (req, res) => {
 
     res.json(event);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -231,7 +235,7 @@ const getMyEvents = async (req, res) => {
     const events = await Event.find({ organizer: req.user._id }).sort({ createdAt: -1 });
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -335,7 +339,7 @@ const updateEvent = async (req, res) => {
     );
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -355,8 +359,10 @@ const deleteEvent = async (req, res) => {
     await Ticket.deleteMany({ event: req.params.id });
     await event.deleteOne();
     res.json({ message: "Event deleted successfully.", deletedId: req.params.id });
+    // Stats cache invalidate karo — event delete hua
+    invalidateStatsCache();
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 

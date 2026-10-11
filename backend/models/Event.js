@@ -85,4 +85,16 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ─── Performance Indexes ──────────────────────────────────────────────────────
+// Ye indexes frequently queried fields pe queries speed up karte hain.
+// Bina indexes ke large dataset pe slow full-collection scans hote hain.
+eventSchema.index({ isFeatured: 1 });                           // Landing page featured events
+eventSchema.index({ category: 1 });                             // Category filter
+eventSchema.index({ organizer: 1 });                            // Organizer's own events
+eventSchema.index({ startDate: 1 });                            // Date range queries
+eventSchema.index({ price: 1 });                                // Price filter + sort
+eventSchema.index({ avgRating: -1 });                           // Rating sort
+eventSchema.index({ createdAt: -1 });                           // Default newest-first sort
+eventSchema.index({ title: "text", synopsis: "text", venue: "text" }); // Full-text search
+
 module.exports = mongoose.model("Event", eventSchema);

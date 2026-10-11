@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { ArrowRight, Star, Calendar, MapPin, Users, Shield, Sparkles, Music, Palette, Utensils, Briefcase } from "lucide-react";
 import logo from "../assets/logo.jpeg";
 import axiosInstance from "../api/axiosInstance";
+import { getCardImage } from "../utils/cloudinary";
 
 // ✅ Static category icons mapping — sirf icons fixed hain, labels DB se aayenge
 const CATEGORY_ICONS = {
@@ -35,33 +35,7 @@ const DEFAULT_STATS = [
 
 function LandingPage() {
   const navigate = useNavigate();
-  const [featuredEvents, setFeaturedEvents] = useState([]);
 
-  useEffect(() => {
-    const fetchFeatured = async () => {
-      try {
-        const { data } = await axios.get("/api/events?limit=3");
-        if (data.events && data.events.length > 0) {
-          const mapped = data.events.map((e) => ({
-            id: e._id,
-            title: e.title,
-            category: e.category,
-            date: e.startDate,
-            location: e.city ? `${e.venue}, ${e.city}` : e.venue,
-            price: e.price === 0 ? "Free (RSVP)" : `From $${e.price}`,
-            image:
-              e.previewImage ||
-              "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
-            badge: e.tags?.[0]?.toUpperCase() || "FEATURED",
-          }));
-          setFeaturedEvents(mapped);
-        }
-      } catch (err) {
-        console.error("Could not fetch featured events from backend", err);
-      }
-    };
-    fetchFeatured();
-  }, []);
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [featuredEvents, setFeaturedEvents] = useState([]);
@@ -307,7 +281,7 @@ function LandingPage() {
       </section>
 
       {/* ── FEATURED EVENTS — DB se ── */}
-      {!eventsLoading && featuredEvents.length > 0 && (
+      {(eventsLoading || featuredEvents.length > 0) && (
         <section className="max-w-6xl mx-auto px-6 py-20">
           <div className="flex items-end justify-between mb-10">
             <div>
@@ -322,39 +296,59 @@ function LandingPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredEvents.map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-2xl overflow-hidden border border-[#ede5dc] shadow-sm hover:shadow-lg transition-all group cursor-pointer"
-                onClick={() => navigate("/signin")}
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <span className="absolute top-3 left-3 bg-[#3d1823] text-white text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full">
-                    {event.badge}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-serif text-lg font-bold text-[#3d2a2a] mb-2 leading-tight">{event.title}</h3>
-                  <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-1">
-                    <Calendar size={12} /> {event.date}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-4">
-                    <MapPin size={12} /> {event.location}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-[#3d2a2a]">{event.price}</span>
-                    <span className="text-xs text-[#b8862f] font-semibold">Sign in to book →</span>
+          {eventsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="bg-white rounded-2xl overflow-hidden border border-[#ede5dc] animate-pulse">
+                  <div className="h-48 bg-stone-200" />
+                  <div className="p-5 flex flex-col gap-2.5">
+                    <div className="h-4 w-3/4 bg-stone-200 rounded" />
+                    <div className="h-3 w-1/2 bg-stone-200 rounded" />
+                    <div className="h-3 w-1/3 bg-stone-200 rounded" />
+                    <div className="flex justify-between items-center mt-3 pt-2">
+                      <div className="h-4 w-16 bg-stone-200 rounded" />
+                      <div className="h-3 w-20 bg-stone-200 rounded" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="bg-white rounded-2xl overflow-hidden border border-[#ede5dc] shadow-sm hover:shadow-lg transition-all group cursor-pointer"
+                  onClick={() => navigate("/signin")}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={getCardImage(event.image)}
+                      alt={event.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <span className="absolute top-3 left-3 bg-[#3d1823] text-white text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full">
+                      {event.badge}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-serif text-lg font-bold text-[#3d2a2a] mb-2 leading-tight">{event.title}</h3>
+                    <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-1">
+                      <Calendar size={12} /> {event.date}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[#7a6a6a] text-xs mb-4">
+                      <MapPin size={12} /> {event.location}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-[#3d2a2a]">{event.price}</span>
+                      <span className="text-xs text-[#b8862f] font-semibold">Sign in to book →</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Lock } from "lucide-react";
+import { Lock, Mail, MapPin, X, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 function Footer() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,14 @@ function Footer() {
   const [isSendingInquiry, setIsSendingInquiry] = useState(false);
 
   const navigate = useNavigate();
+
+  const MODAL_CONTENT = {
+    about: { title: "About Us", subtitle: "Our Story", content: <p className="text-sm text-stone-600 leading-relaxed">We curate the world's most luxurious events...</p> },
+    careers: { title: "Careers", subtitle: "Join Our Team", content: <p className="text-sm text-stone-600 leading-relaxed">Check back later for open positions.</p> },
+    press: { title: "Press", subtitle: "Media Inquiries", content: <p className="text-sm text-stone-600 leading-relaxed">Please contact press@luxeevents.com.</p> },
+    faqs: { title: "FAQs", subtitle: "Common Questions", content: <p className="text-sm text-stone-600 leading-relaxed">Find answers to common questions here.</p> },
+    refund: { title: "Refund Policy", subtitle: "Our Policies", content: <p className="text-sm text-stone-600 leading-relaxed">Tickets are non-refundable 24h before the event.</p> },
+  };
 
   // Handle Newsletter Subscription
   const handleSubscribe = async (e) => {
@@ -60,13 +69,6 @@ function Footer() {
     } finally {
       setIsSendingInquiry(false);
     }
-  };
-
-  const categories = ["Galas", "Conferences", "Concerts", "Workshops", "Weddings"];
-
-  const handleCategoryClick = (cat) => {
-    navigate(`/events?category=${encodeURIComponent(cat)}`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleNavClick = (path) => {

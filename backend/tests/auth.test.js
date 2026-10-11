@@ -22,7 +22,7 @@ describe('Auth API Endpoints', () => {
     name: 'Test User',
     email: 'test@example.com',
     password: 'password123',
-    role: 'user'
+    role: 'attendee'
   };
 
   it('should register a new user successfully', async () => {

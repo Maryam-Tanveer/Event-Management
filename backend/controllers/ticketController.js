@@ -2,6 +2,8 @@ const Ticket = require("../models/Ticket");
 const Event = require("../models/Event");
 // Stripe ko initialize karo — fallback placeholder avoids process crash during tests
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder");
+const { serverError } = require("../utils/errorResponse");
+const { sendTicketEmail } = require("../utils/sendTicketEmail");
 
 const PROMO_RATES = {
   LUXE10: 0.10,
@@ -30,6 +32,25 @@ const purchaseTicket = async (req, res) => {
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
+    }
+
+    // --- Step 2.5: Ticket capacity check (maxTickets enforce karo) ---
+    if (event.maxTickets !== null && event.maxTickets !== undefined) {
+      const soldResult = await Ticket.aggregate([
+        { $match: { event: event._id } },
+        { $group: { _id: null, totalSold: { $sum: "$quantity" } } },
+      ]);
+      const totalSold = soldResult[0]?.totalSold || 0;
+      const remaining = event.maxTickets - totalSold;
+
+      if (remaining <= 0) {
+        return res.status(400).json({ message: "Sorry, this event is sold out." });
+      }
+      if (quantity > remaining) {
+        return res.status(400).json({
+          message: `Only ${remaining} ticket(s) remaining for this event.`,
+        });
+      }
     }
 
     // --- Step 3: Stripe se payment VERIFY karo ---
@@ -94,11 +115,25 @@ const purchaseTicket = async (req, res) => {
     );
 
     res.status(201).json(populatedTicket);
+
+    // Email asynchronously bhejo — response wait nahi karta
+    sendTicketEmail({
+      to:          req.user.email,
+      userName:    req.user.name,
+      eventTitle:  event.title,
+      eventDate:   event.startDate,
+      venue:       event.venue,
+      ticketType,
+      quantity,
+      totalAmount,
+      isFree:      false,
+      ticketId:    ticket._id.toString(),
+    }).catch(() => {}); // silently ignore email failures
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({ message: "Ticket already issued for this payment." });
     }
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -129,6 +164,25 @@ const registerFreeTicket = async (req, res) => {
       });
     }
 
+    // --- Capacity check for free events ---
+    if (event.maxTickets !== null && event.maxTickets !== undefined) {
+      const soldResult = await Ticket.aggregate([
+        { $match: { event: event._id } },
+        { $group: { _id: null, totalSold: { $sum: "$quantity" } } },
+      ]);
+      const totalSold = soldResult[0]?.totalSold || 0;
+      const remaining = event.maxTickets - totalSold;
+
+      if (remaining <= 0) {
+        return res.status(400).json({ message: "Sorry, this event is sold out." });
+      }
+      if (quantity > remaining) {
+        return res.status(400).json({
+          message: `Only ${remaining} spot(s) remaining for this free event.`,
+        });
+      }
+    }
+
     // Duplicate registration check — ek user ek free event ke liye ek baar hi register kare
     const alreadyRegistered = await Ticket.findOne({ event: eventId, user: req.user._id });
     if (alreadyRegistered) {
@@ -153,11 +207,25 @@ const registerFreeTicket = async (req, res) => {
     );
 
     res.status(201).json(populatedTicket);
+
+    // Email asynchronously bhejo — response wait nahi karta
+    sendTicketEmail({
+      to:          req.user.email,
+      userName:    req.user.name,
+      eventTitle:  event.title,
+      eventDate:   event.startDate,
+      venue:       event.venue,
+      ticketType,
+      quantity,
+      totalAmount: 0,
+      isFree:      true,
+      ticketId:    ticket._id.toString(),
+    }).catch(() => {}); // silently ignore email failures
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({ message: "You are already registered for this event." });
     }
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -171,7 +239,7 @@ const getMyTickets = async (req, res) => {
 
     res.json(tickets);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 

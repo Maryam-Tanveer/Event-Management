@@ -1,6 +1,7 @@
 import React from "react";
 import { MapPin, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getCardImage } from "../../utils/cloudinary";
 
 function EventCard({ event }) {
   const navigate = useNavigate();
@@ -17,8 +18,9 @@ function EventCard({ event }) {
     >
       <div className="relative h-40 overflow-hidden">
         <img
-          src={event.image}
+          src={getCardImage(event.image)}
           alt={event.title}
+          loading="lazy"
           className="w-full h-full object-cover"
         />
         <span className="absolute top-3 right-3 text-[10px] tracking-wide font-medium bg-white/90 text-stone-700 px-2.5 py-1 rounded-full">

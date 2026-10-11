@@ -53,4 +53,9 @@ const ticketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ─── Performance Indexes ──────────────────────────────────────────────────────
+ticketSchema.index({ user: 1 });           // My tickets query
+ticketSchema.index({ event: 1 });          // Event ke saare tickets (capacity check)
+ticketSchema.index({ user: 1, event: 1 }); // Duplicate check + review eligibility
+
 module.exports = mongoose.model("Ticket", ticketSchema);

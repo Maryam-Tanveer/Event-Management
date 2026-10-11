@@ -1,4 +1,4 @@
-import { stepperSteps } from "../../data/mockEvents";
+import { stepperSteps } from "../../data/constants";
 
 function StepperBar({ activeStep = 1, onStepClick }) {
   return (

@@ -28,4 +28,26 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
+// ── Response interceptor: Token expire ho jaaye toh auto-logout karo ──────────
+// Agar backend 401 return kare (token invalid/expired) toh:
+// 1. localStorage se user data hata do
+// 2. User ko /signin pe redirect karo
+// Isse user "stuck" nahi hoga unauthorized state mein
+axiosInstance.interceptors.response.use(
+  (response) => response, // success — as-is return karo
+  (error) => {
+    if (error.response?.status === 401) {
+      // Sirf tab logout karo jab user actually logged in ho
+      // (agar pehle se localStorage empty hai toh bhi koi issue nahi)
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        localStorage.removeItem("user");
+        // Hard redirect — React state bhi reset ho jaata hai
+        window.location.href = "/signin";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default axiosInstance;

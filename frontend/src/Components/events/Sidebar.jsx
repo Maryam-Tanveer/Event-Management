@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { Calendar } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
-import { priceOptions } from "../../data/mockEvents";
+import { priceOptions } from "../../data/constants";
 
-function Sidebar({ category, setCategory, priceKey, setPriceKey }) {
+function Sidebar({ category, setCategory, priceKey, setPriceKey, dateFrom, setDateFrom, dateTo, setDateTo }) {
   // ✅ Categories DB se fetch hoti hain — hardcoded nahi
   const [categoryOptions, setCategoryOptions] = useState(["All Events"]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -22,6 +23,34 @@ function Sidebar({ category, setCategory, priceKey, setPriceKey }) {
     };
     fetchCategories();
   }, []);
+
+  const handleQuickDate = (preset) => {
+    const today = new Date();
+    if (preset === "clear") {
+      setDateFrom("");
+      setDateTo("");
+      return;
+    }
+    
+    if (preset === "today") {
+      const formatted = today.toISOString().split("T")[0];
+      setDateFrom(formatted);
+      setDateTo(formatted);
+    } else if (preset === "weekend") {
+      const nextSaturday = new Date(today);
+      nextSaturday.setDate(today.getDate() + ((6 - today.getDay() + 7) % 7 || 7)); // Next Saturday
+      const nextSunday = new Date(nextSaturday);
+      nextSunday.setDate(nextSaturday.getDate() + 1);
+      
+      setDateFrom(nextSaturday.toISOString().split("T")[0]);
+      setDateTo(nextSunday.toISOString().split("T")[0]);
+    } else if (preset === "month") {
+      const nextMonth = new Date(today);
+      nextMonth.setDate(today.getDate() + 30);
+      setDateFrom(today.toISOString().split("T")[0]);
+      setDateTo(nextMonth.toISOString().split("T")[0]);
+    }
+  };
 
   return (
     <aside className="w-full lg:w-56 flex-shrink-0">
@@ -56,16 +85,7 @@ function Sidebar({ category, setCategory, priceKey, setPriceKey }) {
       {/* Price Range */}
       <div>
         <h4 className="text-sm font-semibold text-stone-900 mb-3">Price Range</h4>
-        <div className="flex flex-col gap-2">
-          {priceOptions.map((p) => (
-            <label
-              key={p.key}
-              className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+
         <div className="flex flex-col gap-1">
           {priceOptions.map((p) => {
             const isSelected = priceKey === p.key;

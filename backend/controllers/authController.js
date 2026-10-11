@@ -2,10 +2,11 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto"); // Node.js built-in — password reset token ke liye
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
+const { serverError } = require("../utils/errorResponse");
 
 // JWT token generate karne ka helper
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || "default_jwt_secret_for_tests_and_development_luxeevents", { expiresIn: "30d" });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
 // @route POST /api/auth/register
@@ -54,7 +55,7 @@ const registerUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -81,7 +82,7 @@ const loginUser = async (req, res) => {
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 
@@ -288,7 +289,7 @@ const updateProfile = async (req, res) => {
       token: req.user.token || generateToken(user._id), // existing token reuse karo
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return serverError(res, error);
   }
 };
 

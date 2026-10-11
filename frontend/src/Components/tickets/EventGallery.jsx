@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from "react";
-
-const fallbackThumbnails = [
-  "https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80",
-];
+import React, { useState } from "react";
 
 // ✅ Gallery images ab event.galleryImages se aati hain — hardcoded URLs nahi
 function EventGallery({ event }) {
+  const [activeImage, setActiveImage] = useState(null);
+
   const images = event?.galleryImages?.length > 0
     ? event.galleryImages
     : [];
@@ -42,7 +37,8 @@ function EventGallery({ event }) {
               key={idx}
               src={src}
               alt={`Gallery ${idx + 1}`}
-              className="w-full h-24 object-cover rounded-lg"
+              onClick={() => setActiveImage(src)}
+              className="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
             />
           ))}
         </div>

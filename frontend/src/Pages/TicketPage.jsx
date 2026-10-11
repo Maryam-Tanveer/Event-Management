@@ -1,7 +1,6 @@
 import React from "react";
 import axiosInstance from "../api/axiosInstance";
 import { useLocation, useNavigate } from "react-router-dom";
-import { mockEvents } from "../data/mockEvents";
 import EventGallery from "../Components/tickets/EventGallery";
 import EventDescription from "../Components/tickets/EventDescription";
 import EventAgenda from "../Components/tickets/EventAgenda";
@@ -14,7 +13,7 @@ import { useState, useEffect } from "react";
 const TicketPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const eventId = location.state?.eventId || 1;
+  const eventId = location.state?.eventId || null;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,10 +21,8 @@ const TicketPage = () => {
 
   useEffect(() => {
     const fetchEvent = async () => {
-      // Mock fallback — sirf numeric IDs ke liye
-      const mockEvent = mockEvents.find((e) => e.id.toString() === eventId.toString());
-      if (mockEvent) {
-        setEvent(mockEvent);
+      if (!eventId) {
+        setError("No event selected. Please choose an event from the events page.");
         setLoading(false);
         return;
       }
@@ -35,7 +32,7 @@ const TicketPage = () => {
         setError(null);
         const { data } = await axiosInstance.get(`/api/events/${eventId}`);
 
-        // ✅ Backend ka response map karo — including new dynamic fields
+        // ✅ Backend ka response map karo — fully dynamic
         const mappedEvent = {
           id:          data._id,
           title:       data.title,
@@ -54,7 +51,7 @@ const TicketPage = () => {
           price:       data.price || 0,
           description: data.synopsis,
           organizer:   data.organizer,
-          // ✅ New dynamic fields
+          // ✅ Dynamic fields
           agendaSlots: data.agendaSlots  || [],
           guests:      data.guests       || [],
           amenities:   data.amenities    || [],
@@ -76,7 +73,7 @@ const TicketPage = () => {
       }
     };
     fetchEvent();
-  }, [eventIdParam]);
+  }, [eventId]);
 
   if (loading) {
     return (

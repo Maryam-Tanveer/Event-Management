@@ -6,6 +6,17 @@ const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 
+// ─── STARTUP SAFETY CHECKS ───────────────────────────────────────────────────
+// Agar ye required env variables missing hain toh app start hi mat karo.
+// Production mein silent failure se bura kuch nahi hota.
+const REQUIRED_ENV = ["JWT_SECRET", "MONGO_URI"];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length > 0 && process.env.NODE_ENV !== "test") {
+  console.error(`\n❌ FATAL ERROR: Missing required environment variables:\n   ${missingEnv.join(", ")}\n`);
+  console.error("Please set these in your .env file and restart the server.");
+  process.exit(1); // App crash karo — ye intentional aur safe hai
+}
+
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");

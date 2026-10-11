@@ -1,5 +1,5 @@
 import { CheckCircle, ShieldCheck } from "lucide-react";
-import { prestigeCriteria } from "../../data/mockEvents";
+import { prestigeCriteria } from "../../data/constants";
 
 function ConciergeChecklist({ qualityScore = 70 }) {
   // SVG circular progress values
