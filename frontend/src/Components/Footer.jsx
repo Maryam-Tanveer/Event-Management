@@ -71,6 +71,8 @@ function Footer() {
     }
   };
 
+  const categories = ["Galas", "Conferences", "Concerts", "Workshops", "Weddings"];
+
   const handleNavClick = (path) => {
     navigate(path);
     window.scrollTo({ top: 0, behavior: "smooth" });
